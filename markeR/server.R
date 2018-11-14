@@ -142,6 +142,10 @@ shinyServer(function(input, output, session) {
    updateSelectizeInput(session, "addcomment", selected = "", choices = setdiff(comments$all, current$layout$comments), server = TRUE)
   })
 
+  # TODO: Potential replacement for radioGroupButtons if I can't get them to look any good using CSS
+  # https://stackoverflow.com/questions/39330299/probabilistic-multiple-choice-test-sliderinputs-sum-to-1-constraint/39379538#39379538
+  # Basically allows swapping to actionBttn and auto-generating a bunch of observers for each one. Seems hacky though...
+
   # Marks buttons
   output$marks = renderUI({
     marks = current$layout$marks
