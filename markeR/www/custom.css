@@ -1,0 +1,133 @@
+#hideguide.btn-tiny {
+  background-color: transparent;
+  color: #ffffff;
+  font-size: 10px;
+  margin: 10px 5px 0px 0px;
+  padding: 2px;
+  z-index: 3;
+  position: relative;
+}
+
+#markgroup {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.btn-star {
+  background-color: transparent;
+  color: #777;
+  font-size: 30px;
+  margin: 0px;
+  padding: 0px;
+  padding-top: 2px;
+}
+
+.btn-star:hover {
+  color: #ffcf40;
+}
+
+.btn-star.active {
+  color: #ffcf40;
+}
+
+#star {
+  margin: 0 !important;
+  float: right;
+}
+
+hr {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+section.content {
+  padding: 0px;
+}
+
+#pagebuttons {
+  position: fixed;
+  bottom: 0;
+}
+
+.btn-page {
+  background-color: #3c8dbc;
+  color: #ffffff;
+  font-size: 16pt;
+  padding: 5px;
+  margin: 2px;
+  display:inline-block
+}
+
+.btn-page:hover {
+  background-color: #6cadec;
+  color: #ffffff;
+}
+
+.btn-group {
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.btn-page:hover[disabled] {
+  background-color: #6cadec;
+  color: #ffffff;
+}
+
+.btn-page:focus {
+  background-color: #6cadec;
+  color: #ffffff;
+}
+
+.btn-marks {
+  background-color: #555;
+  color: #ffffff;
+  font-size: 16pt;
+  padding: 3px;
+  margin: 5px;
+  border-radius: 10px;
+}
+
+.btn-marks:hover {
+  background-color: #3c8dbc;
+}
+
+.btn-marks.active {
+  background-color: #3c8dbc;
+}
+
+.btn-marks:focus {
+  background-color: #3c8dbc;
+  color: #ffffff;
+}
+
+.btn-light {
+  background-color: #555;
+  color: #ffffff;
+  padding: 2px;
+  margin: 2px;
+}
+
+.btn-light.active {
+  background-color: #bbb;
+}
+
+section.sidebar .shiny-input-container {
+  padding: 0px 5px 0px 5px;
+  margin-bottom: 5px;
+}
+
+.selectize-input {
+  padding: 3px 6px;
+  min-height: 28px;
+}
+
+.selectize-control {
+  margin-bottom: 0px;
+}
+
+#pageHeader.header-class {
+  font-size: 20px;
+  font-family: "Helvetica Neue", "Helvetica", "Arial", "sans-serif";
+  color: #ffffff;
+  line-height: 50px;
+}

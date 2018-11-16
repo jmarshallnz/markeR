@@ -1,34 +1,44 @@
 library(shiny)
+library(shinydashboard)
+library(shinyWidgets)
 library(shinyjs)
 
-fluidPage(
-  # Some JS magic to unfocus buttons on click
-  tags$script(HTML("
-     $(document).ready(function() {
-        $('.bttn').on('click', function(){$(this).blur()});
-      })
-    ")),
-  useShinyjs(),
-  titlePanel("markeR: Arrr!"),
-  h3(textOutput("student")),
-  h4(textOutput("question")),
-  fluidRow(
+add_attribute <- function(x, ...) {
+  x$attribs <- c(x$attribs, list(...))
+  x
+}
 
-    column(9, 
-      uiOutput("comments")
-    ),
-    
-    column(1,
-      uiOutput("marks")
-    ),
-    
-    column(2,
-      uiOutput("awards")      
-    )
+dashboardPage(
+  dashboardHeader(title="markeR", titleWidth = 350),
+  dashboardSidebar(width=350,
+    h4(textOutput("question"), style="display:inline-block; padding-left: 5px"),
+    actionButton("hideguide", label="Hide", class="btn-tiny", style="float: right;"),
+    conditionalPanel(condition = "output.show_guide > 0", htmlOutput("markingguide")),
+    tags$hr(),
+    h4("Comments", style="padding-left: 5px"),
+    uiOutput("comments"),
+    selectizeInput("addcomment", label = NULL, choices = NULL, width = '100%', options=list(create=TRUE, placeholder="New Comment...")),
+    tags$hr(),
+    h4("Mark", style="padding-left: 5px"),
+    add_attribute(radioGroupButtons("marks", status = "marks", choices = "", individual=TRUE, width='290px', justified=TRUE),id="markgroup"),
+    add_attribute(checkboxGroupButtons("star", choices = "", checkIcon = list(yes = icon("star", class="fas"), no = icon("star-o", class="far")),
+                         status="star"),id="markgroup"),
+    tags$hr(),
+    div(id = "pagebuttons", style="width:340px",
+      actionButton("prev", "Prev", width='30%', style="display:inline-block;", class="btn-page"),
+      actionButton("next", "Next", width='30%', style="display:inline-block; float:right", class="btn-page"))
   ),
-  fluidRow(
-    column(8, selectizeInput("addcomment", label = NULL, choices = NULL, width = '100%', options=list(create=TRUE, placeholder="New Comment..."))),
-    column(2, actionBttn("prev", "Prev", size="lg", block=TRUE, color='primary', style='unite')),
-    column(2, actionBttn("next", "Next", size="lg", block=TRUE, color='primary', style='unite'))
+  dashboardBody(
+    useShinyjs(),
+    tags$script(HTML('
+                  $(document).ready(function() {
+                  $("header").find("nav").append(\'<div id="pageHeader" class="header-class"></div>\');
+                  })
+                 ')),
+    tags$head(
+      tags$link(rel = "stylesheet", type="text/css", href="custom.css")
+    ),
+    tags$style(type = "text/css", "#pdfviewer {height: calc(100vh - 54px) !important;}"),
+    htmlOutput('pdfviewer')
   )
 )

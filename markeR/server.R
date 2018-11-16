@@ -6,9 +6,8 @@ library(dplyr)
 source("sample_csv.R")
 
 # create some data for some questions
-question_db = tibble(Question = 1:3, Marks = c(3,5,2), By=c(1,1,0.5))
+question_db = tibble(Question = 1:3, Marks = c(3,5,2), By=c(1,1,0.5), Guide="$$\\begin{aligned}\\bar{x} \\pm 2 \\frac{s}{\\sqrt{n}} &= 2.3 \\pm 2 \\frac{1.2}{\\sqrt{53}}\\\\\\\\ & = 2.3 \\pm 0.33\\\\\\\\ & = (1.97, 2.63)\\end{aligned}$$\n - 1 mark for calculation\n - 1 mark for answer\n - 1 mark for interpretation")
 comments_db = tibble(Question = 1, Comments = c("Calculation error", "Use a prediction interval instead of a confidence interval", "Incorrect standard error", "Interpretation is for individuals"))
-awards_db = tibble(Awards = c("Excellent!", "Great work!", "Very nice!"))
 
 # Format of marks data.frame would be something like:
 marks_db <- NULL
@@ -43,15 +42,14 @@ question_layout = NULL; # this is fetched from the database given the question
 #  sim_start <- as.data.frame(sim_start)
 #}
 
-read_layout <- function(question) {
+read_question_layout <- function(question) {
   # get the question
-  layout = question_db %>% filter(Question == question) %>% select(marks=Marks, by=By) %>% as.list()
+  question_db %>% filter(Question == question) %>% select(marks=Marks, guide=Guide, by=By) %>% as.list()
+}
+
+read_comments_layout <- function(question) {
   # get the comments
-  layout$comments = comments_db %>% filter(Question == question) %>% pull(Comments)
-  # get the awards
-  layout$awards = awards_db %>% pull(Awards)
-  # return
-  layout
+  comments_db %>% filter(Question == question) %>% pull(Comments)
 }
 
 read_marks <- function(student_id, question) {
@@ -76,59 +74,66 @@ max_question <- function() {
 shinyServer(function(input, output, session) {
 
   # Where we are at currently. Will have marker_id in future
-  current <- reactiveValues(student_id = current_student_id,
-                            student_name = current_student_name,
-                            question = current_question,
-                            layout = read_layout(current_question),
-                            marks = read_marks(current_student_id, current_question))
+  student <- reactiveValues(id = current_student_id,
+                            name = current_student_name,
+                            pdf_url = "test.pdf")
+
+  current <- reactiveValues(question = current_question,
+                            marks = read_marks(current_student_id, current_question),
+                            new_marks = read_marks(current_student_id, current_question))
+
+  layout  <- reactiveValues(show_guide = TRUE,
+                            question = read_question_layout(current_question),
+                            comments = read_comments_layout(current_question))
 
   # All comments, so that we can update the choice list when the user has added one
   comments <- reactiveValues(all = get_all_comments())
 
-  # TODO: make the various buttons do something useful...
-#  observeEvent(input$submit, {
-#    sample <- get_sample()
-#    if (sum(!is.na(sample)) > 0) {
-#      # write the results to the database
-#      v$samples <- rbind(v$samples, c(sample, current_year))
-#      if (!write_row("noodle", columns, c(sample, current_year))) {
-#        cat("Unable to write sample to database\n", file=stderr())
-#      }
-#    }
-#
-#    # reset our input controls
-#    for (i in seq_along(vars))
-#      updateNumericInput(session, vars[i], value=NA)
-#  })
-
   # Current student
-  output$student = renderText({
-    paste(current$student_id, current$student_name)
+  observe({
+    cat("updating the pageHeader\n")
+    header = paste(student$id, student$name)
+    shinyjs::html("pageHeader", header)
+  })
+  output$pdfviewer <- renderText({
+    return(paste('<iframe name="pdfviewer" style="width:100%; border:0; height:100%" src="', paste0(student$pdf_url, "#toolbar=0&navpanes=0"), '"></iframe>', sep = ""))
   })
 
   # Current question
   output$question = renderText({
     paste("Question", current$question)
   })
-  
+
+  # Current guide
+  output$markingguide = renderUI({
+    html <- markdown::markdownToHTML(text = layout$question$guide, fragment.only = TRUE)
+    Encoding(html) <- "UTF-8"
+    withMathJax(HTML(html))
+  })
+
+  # Hide/show the guide
+  observeEvent(input$hideguide, {
+    layout$show_guide <- !layout$show_guide
+    updateActionButton(session, "hideguide", label = ifelse(layout$show_guide, "Hide", "Show"))
+  })
+  output$show_guide <- reactive({ return(if(layout$show_guide) 1 else 0) })
+  outputOptions(output, "show_guide", suspendWhenHidden = FALSE)
+
   # Comment buttons
   output$comments = renderUI({
-    comments = current$layout$comments
+    comments = layout$comments
     selected = current$marks$comments
-    checkboxGroupButtons("comments", choices = comments, selected=selected,
-                      direction="vertical", size='lg', individual=TRUE, width='700px', justified = TRUE)
+    checkboxGroupButtons("comments", choices = comments, selected=selected, status='light',
+                      direction="vertical", individual=TRUE, width='350px', justified = TRUE)
   })
-  
-  # Add comment updater
 
-  # React to the add comment button
+  # Add comment updater
   observeEvent(input$addcomment, {
-    # nchar check, because emptying the text field results in "" choice.
-    if (nchar(input$addcomment)) {
-  #    && !(input$addcomment %in% comments$all)) {
+    if (nchar(input$addcomment)) { #  nchar check, because emptying the text field results in "" choice.
       cat("Adding a new comment\n")
-      # new comment - add to this question.
-      current$layout$comments <- c(current$layout$comments, input$addcomment)
+      # new comment - add to this question
+      # TODO: UPDATE THE DATABASE HERE
+      layout$comments <- c(layout$comments, input$addcomment)
       # and select it!
       current$marks$comments = c(current$marks$comments, input$addcomment)
     }
@@ -137,36 +142,32 @@ shinyServer(function(input, output, session) {
   # Update all comments whenever a single comment is added
   observe({
    cat("all comments updated\n")
-   current$layout$comments
-   comments$all = union(comments$all, current$layout$comments)
-   updateSelectizeInput(session, "addcomment", selected = "", choices = setdiff(comments$all, current$layout$comments), server = TRUE)
+   layout$comments
+   comments$all = union(comments$all, layout$comments)
+   choices = setdiff(comments$all, layout$comments)
+   updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
   })
-
-  # TODO: Potential replacement for radioGroupButtons if I can't get them to look any good using CSS
-  # https://stackoverflow.com/questions/39330299/probabilistic-multiple-choice-test-sliderinputs-sum-to-1-constraint/39379538#39379538
-  # Basically allows swapping to actionBttn and auto-generating a bunch of observers for each one. Seems hacky though...
 
   # Marks buttons
-  output$marks = renderUI({
-    marks = current$layout$marks
-    by = current$layout$by
-    selected = current$marks$mark
-    radioGroupButtons("marks", choices = seq(0, marks, by=by), selected=selected, status = 'danger',
-                      direction="vertical", size='lg', individual=TRUE, width='100%')
+  observeEvent(input$marks, {
+    # We need this as updateRadioGroupButtons et. al. don't update input$marks when updating/reset, even with renderUI
+    # see https://stackoverflow.com/questions/40309649/shiny-updateradiobuttons-cannot-clear-selected-item for example
+    cat("Clicked on a mark\n")
+    # Note: This isn't enough - input$marks might be 2 from a previous question, whereby
+    # clicking on 2 won't trigger this observer as input$marks isn't updated.
+    # We need a way of *forcing* input$marks to be back to empty or _something_. Maybe it's only on deselect??
+    current$new_marks$mark = input$marks # That isn't enough either, as it doesn't reset if you click the same thing
+                                         # i.e. if input$marks doesn't change between items
   })
-
-  # Award buttons
-  output$awards = renderUI({
-    awards = current$layout$awards
-    selected = current$marks$award
-    cat("Selected award is:")
-    print(selected)
-    if (is.null(selected))
-      selected = character(0)
-    cat("\n")
-    # TODO: Perhaps just replace these with a set of buttons and then detect them directly?
-    radioGroupButtons("awards", choices = awards, selected=selected,
-                      direction="vertical", size='lg', individual=TRUE, width='100%')
+  observe({
+    cat("Marks being updated\n")
+#    layout$question
+    marks = layout$question$marks
+    by = layout$question$by
+    selected = current$marks$mark
+    marks = seq(0, marks, by=by)
+    choices = c("X", marks)
+    updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
   })
 
   # Next/Prev buttons
@@ -176,16 +177,43 @@ shinyServer(function(input, output, session) {
   })
   observeEvent(input$`next`, {
     if (current$question < max_question()) {
+      # TODO: Write mark, award, layout to database
+      cat("Going NEXT\n")
+      cat("Current mark=", isolate(current$marks$mark), "\n")
+      cat("Current new-mark=", isolate(current$marks$new_mark), "\n")
+      cat("Current input-mark=", isolate(input$marks), "\n")
+      cat("Current award=", isolate(current$marks$award), "\n")
+      cat("Current input-award=", isolate(input$awards), "\n")
+      # increment the question
       current$question = current$question + 1
-      current$layout = read_layout(current$question)
-      current$marks = read_marks(current$student_id, current$question)
+      # read in the new layout
+      layout$question = read_question_layout(current$question)
+      layout$comments = read_comments_layout(current$question)
+      layout$awards   = read_awards_layout()
+      # and update marks
+      current$marks = read_marks(student$id, current$question)
+      current$new_marks = read_marks(student$id, current$question)
     }
   })
   observeEvent(input$prev, {
     if (current$question > 1) {
+      cat("Going PREV\n")
+      cat("Current mark=", isolate(current$marks$mark), "\n")
+      cat("Current new-mark=", isolate(current$marks$new_mark), "\n")
+      cat("Current input-mark=", isolate(input$marks), "\n")
+      cat("Current award=", isolate(current$marks$award), "\n")
+      cat("Current input-award=", isolate(input$awards), "\n")
+
+      # decrement the question
       current$question = current$question - 1
-      current$layout = read_layout(current$question)
-      current$marks = read_marks(current$student_id, current$question)
+      # read in the new layout
+      layout$question = read_question_layout(current$question)
+      layout$comments = read_comments_layout(current$question)
+      layout$awards   = read_awards_layout()
+      # and update marks
+      current$marks = read_marks(student$id, current$question)
+      current$new_marks = read_marks(student$id, current$question)
     }
   })
+
 })
