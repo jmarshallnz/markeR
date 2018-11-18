@@ -189,7 +189,6 @@ shinyServer(function(input, output, session) {
       # read in the new layout
       layout$question = read_question_layout(current$question)
       layout$comments = read_comments_layout(current$question)
-      layout$awards   = read_awards_layout()
       # and update marks
       current$marks = read_marks(student$id, current$question)
       current$new_marks = read_marks(student$id, current$question)
@@ -209,7 +208,6 @@ shinyServer(function(input, output, session) {
       # read in the new layout
       layout$question = read_question_layout(current$question)
       layout$comments = read_comments_layout(current$question)
-      layout$awards   = read_awards_layout()
       # and update marks
       current$marks = read_marks(student$id, current$question)
       current$new_marks = read_marks(student$id, current$question)
