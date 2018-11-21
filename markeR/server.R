@@ -1,90 +1,34 @@
 library(shiny)
 library(shinyWidgets)
 library(dplyr)
+library(stringr)
 
-#source("sample_db.R")
-source("sample_csv.R")
+source("questions_csv.R")
+source("marks_csv.R")
 
-# create some data for some questions
-question_db = tibble(Question = 1:3, Marks = c(3,5,2), By=c(1,1,0.5), Guide="$$\\begin{aligned}\\bar{x} \\pm 2 \\frac{s}{\\sqrt{n}} &= 2.3 \\pm 2 \\frac{1.2}{\\sqrt{53}}\\\\\\\\ & = 2.3 \\pm 0.33\\\\\\\\ & = (1.97, 2.63)\\end{aligned}$$\n - 1 mark for calculation\n - 1 mark for answer\n - 1 mark for interpretation")
-comments_db = tibble(Question = 1, Comments = c("Calculation error", "Use a prediction interval instead of a confidence interval", "Incorrect standard error", "Interpretation is for individuals"))
+# The list for this marker to mark. This would be randomised by student (but not by question)
+mark_order <- read_marks() %>% select(StudentID, Question)
 
-# Format of marks data.frame would be something like:
-marks_db <- NULL
-#data.frame(StudentID = NULL, StudentName = NULL, Question = NULL, Mark = NULL, Comments = NULL, Award=NULL)
-
-# These are reactives that change per-student
 current_student_id = "15969203" # make identifier a string for extensibility
 current_student_name = "Joanne Bloggs"
 current_question = 1
 
-# These are reactives that change per-question/student
-question_marks = NULL; # this is fetched from the database given the student and question
-question_layout = NULL; # this is fetched from the database given the question
-
-# database stuff goes here
-# create database for noodles
-#if (!create_database("noodle", columns)) {
-#  cat("Unable to create database\n", file=stderr());
-#}
-#sim_columns <- c("n", "Ex", "Ex2", "year")
-#if (!create_database("simulation", sim_columns, types=c("INT", "DOUBLE", "DOUBLE", "INT"))) {
-#  cat("Unable to create database\n", file=stderr());
-#}
-#sim_start <- na.omit(read_rows("simulation", sim_columns))
-#if (!is.null(sim_start) && nrow(sim_start) > 0) {
-#  sim_start <- sim_start[nrow(sim_start),]
-#  cat("read simulation info from database\n", file=stderr())
-#} else {
-#  cat("didn't read simulation info from database - creating new\n", file=stderr())
-#  sim_start <- matrix(0, 1, length(sim_columns))
-#  colnames(sim_start) = sim_columns;
-#  sim_start <- as.data.frame(sim_start)
-#}
-
-read_question_layout <- function(question) {
-  # get the question
-  question_db %>% filter(Question == question) %>% select(marks=Marks, guide=Guide, by=By) %>% as.list()
-}
-
-read_comments_layout <- function(question) {
-  # get the comments
-  comments_db %>% filter(Question == question) %>% pull(Comments)
-}
-
-read_marks <- function(student_id, question) {
-  # get the student/id/marks
-  if (is.null(marks_db)) {
-    # TODO: open the marks database and read...
-    return(NULL)
-  }
-  marks_db %>%
-    filter(StudentID == student_id, Question == question) %>%
-    select(mark=Mark, award=Award, comments=Comments)
-}
-
-get_all_comments <- function() {
-  comments_db %>% pull(Comments) %>% unique()
-}
-
-max_question <- function() {
-  question_db %>% pull(Question) %>% max()
-}
-
 shinyServer(function(input, output, session) {
 
   # Where we are at currently. Will have marker_id in future
-  student <- reactiveValues(id = current_student_id,
-                            name = current_student_name,
-                            pdf_url = "test.pdf")
+#  student <- reactiveValues(id = mark_order$StudentID[1],
+#                            details = get_student_details(mark_order$StudentID[1]),
+#                            pdf_url = get_student_pdf(mark_order$StudentID[1]))
+  student <- reactiveValues(info = get_student_details(mark_order$StudentID[1]))
 
-  current <- reactiveValues(question = current_question,
-                            marks = read_marks(current_student_id, current_question),
-                            new_marks = read_marks(current_student_id, current_question))
+  current <- reactiveValues(question = 1,
+                            question_name = mark_order$Question[1],
+                            marks = get_marks(mark_order$StudentID[1], mark_order$Question[1]),
+                            new_marks = get_marks(mark_order$StudentID[1], mark_order$Question[1]))
 
   layout  <- reactiveValues(show_guide = TRUE,
-                            question = read_question_layout(current_question),
-                            comments = read_comments_layout(current_question))
+                            question = read_question_layout(mark_order$Question[1]),
+                            comments = get_comments_for_question(mark_order$Question[1]))
 
   # All comments, so that we can update the choice list when the user has added one
   comments <- reactiveValues(all = get_all_comments())
@@ -92,16 +36,16 @@ shinyServer(function(input, output, session) {
   # Current student
   observe({
     cat("updating the pageHeader\n")
-    header = paste(student$id, student$name)
+    header = paste(student$info$id, student$info$name)
     shinyjs::html("pageHeader", header)
   })
   output$pdfviewer <- renderText({
-    return(paste('<iframe name="pdfviewer" style="width:100%; border:0; height:100%" src="', paste0(student$pdf_url, "#toolbar=0&navpanes=0"), '"></iframe>', sep = ""))
+    return(paste('<iframe name="pdfviewer" style="width:100%; border:0; height:100%" src="', paste0(student$info$pdf_url, "#toolbar=0&navpanes=0"), '"></iframe>', sep = ""))
   })
 
   # Current question
   output$question = renderText({
-    paste("Question", current$question)
+    paste("Question", current$question_name)
   })
 
   # Current guide
@@ -131,10 +75,11 @@ shinyServer(function(input, output, session) {
   observeEvent(input$addcomment, {
     if (nchar(input$addcomment)) { #  nchar check, because emptying the text field results in "" choice.
       cat("Adding a new comment\n")
-      # new comment - add to this question
-      # TODO: UPDATE THE DATABASE HERE
-      layout$comments <- c(layout$comments, input$addcomment)
-      # and select it!
+      # new comment - add to the database
+      add_comment_to_question(current$question_name, input$addcomment)
+      # refresh the comment list from the database
+      layout$comments <- get_comments_for_question(current$question_name)
+      # and select that comment for the student
       current$marks$comments = c(current$marks$comments, input$addcomment)
     }
   })
@@ -172,11 +117,11 @@ shinyServer(function(input, output, session) {
 
   # Next/Prev buttons
   observe({
-    shinyjs::toggleState("next", current$question < max_question())
+    shinyjs::toggleState("next", current$question < nrow(mark_order))
     shinyjs::toggleState("prev", current$question > 1)
   })
   observeEvent(input$`next`, {
-    if (current$question < max_question()) {
+    if (current$question < nrow(mark_order)) {
       # TODO: Write mark, award, layout to database
       cat("Going NEXT\n")
       cat("Current mark=", isolate(current$marks$mark), "\n")
@@ -184,14 +129,21 @@ shinyServer(function(input, output, session) {
       cat("Current input-mark=", isolate(input$marks), "\n")
       cat("Current award=", isolate(current$marks$award), "\n")
       cat("Current input-award=", isolate(input$awards), "\n")
-      # increment the question
+
+      # increment the question and/or student
       current$question = current$question + 1
+      current$question_name = mark_order$Question[current$question]
+      student$info = get_student_details(mark_order$StudentID[current$question])
+      cat("Got student details...\n")
+      print(isolate(student))
+
       # read in the new layout
-      layout$question = read_question_layout(current$question)
-      layout$comments = read_comments_layout(current$question)
+      layout$question = read_question_layout(current$question_name)
+      layout$comments = get_comments_for_question(current$question_name)
+      cat("Got layout...\n")
       # and update marks
-      current$marks = read_marks(student$id, current$question)
-      current$new_marks = read_marks(student$id, current$question)
+      current$marks = get_marks(student$info$id, current$question_name)
+      current$new_marks = get_marks(student$info$id, current$question_name)
     }
   })
   observeEvent(input$prev, {
@@ -205,12 +157,15 @@ shinyServer(function(input, output, session) {
 
       # decrement the question
       current$question = current$question - 1
+      current$question_name = mark_order$Question[current$question]
+      student$info = get_student_details(mark_order$StudentID[current$question])
+
       # read in the new layout
-      layout$question = read_question_layout(current$question)
-      layout$comments = read_comments_layout(current$question)
+      layout$question = read_question_layout(current$question_name)
+      layout$comments = get_comments_for_question(current$question_name)
       # and update marks
-      current$marks = read_marks(student$id, current$question)
-      current$new_marks = read_marks(student$id, current$question)
+      current$marks = get_marks(student$info$id, current$question_name)
+      current$new_marks = get_marks(student$info$id, current$question_name)
     }
   })
 
