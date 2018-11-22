@@ -1,0 +1,13 @@
+Question,Marks,By,Guide,Comments
+1 (a),3,1,"$$\begin{aligned}\bar{x} \pm 2 \frac{s}{\sqrt{n}} &= 2.3 \pm 2 \frac{1.2}{\sqrt{53}}\\\\ & = 2.3 \pm 0.33\\\\ & = (1.97, 2.63)\end{aligned}$$
+ - 1 mark for calculation
+ - 1 mark for answer
+ - 1 mark for interpretation","list(c(""Calculation error"", ""Use a prediction interval instead of a confidence interval"", ""Incorrect standard error"", ""Interpretation is for individuals"", ""test""))"
+1 (b),5,1,"$$\begin{aligned}\bar{x} \pm 2 \frac{s}{\sqrt{n}} &= 2.3 \pm 2 \frac{1.2}{\sqrt{53}}\\\\ & = 2.3 \pm 0.33\\\\ & = (1.97, 2.63)\end{aligned}$$
+ - 1 mark for calculation
+ - 1 mark for answer
+ - 1 mark for interpretation","list(c(""Calculation error"", ""Use a prediction interval instead of a confidence interval"", ""Incorrect standard error"", ""Interpretation is for individuals"", ""bob""))"
+1 (c),2,0.5,"$$\begin{aligned}\bar{x} \pm 2 \frac{s}{\sqrt{n}} &= 2.3 \pm 2 \frac{1.2}{\sqrt{53}}\\\\ & = 2.3 \pm 0.33\\\\ & = (1.97, 2.63)\end{aligned}$$
+ - 1 mark for calculation
+ - 1 mark for answer
+ - 1 mark for interpretation","c(""Calculation error"", ""Use a prediction interval instead of a confidence interval"", ""Incorrect standard error"", ""Interpretation is for individuals"")"

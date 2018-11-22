@@ -21,7 +21,7 @@ dashboardPage(
     tags$hr(),
     h4("Mark", style="padding-left: 5px"),
     add_attribute(radioGroupButtons("marks", status = "marks", choices = "", individual=TRUE, width='290px', justified=TRUE),id="markgroup"),
-    add_attribute(checkboxGroupButtons("star", choices = "", checkIcon = list(yes = icon("star", class="fas"), no = icon("star-o", class="far")),
+    add_attribute(checkboxGroupButtons("star", choiceNames = list(""), choiceValues = list("star"), checkIcon = list(yes = icon("star", class="fas"), no = icon("star-o", class="far")),
                          status="star"),id="markgroup"),
     tags$hr(),
     div(id = "pagebuttons", style="width:340px",

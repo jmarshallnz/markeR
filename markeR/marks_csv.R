@@ -21,7 +21,7 @@ unflatten_listcol <- function(db, list_col) {
 # first time creation
 read_marks <- function() {
   if (file.exists("marks.csv")) {
-    read_csv("marks.csv") %>% unflatten_listcol(Comments)
+    read_csv("marks.csv", col_types = cols()) %>% unflatten_listcol(Comments)
   } else {
     x = tibble(StudentID = c("123", "456", "789"), StudentName = c("Alice", "Bob", "Cara"), PDFurl = paste0(StudentName, ".pdf"))
     y = tibble(Question = c("1 (a)", "1 (b)", "1 (c)"), Marker = "Doug", Mark = NA, Award=NA, Order = NA, Comments = list(NULL))
@@ -37,7 +37,40 @@ get_marks <- function(id, question) {
   cat("Calling get_marks()")
   print(id)
   print(question)
-  read_marks() %>% filter(StudentID == id, Question == question) %>%
+  marks = read_marks() %>% filter(StudentID == id, Question == question) %>%
     select(mark = Mark, award = Award, comments = Comments) %>%
-    as.list()
+    as.list
+  marks$comments = unlist(marks$comments)
+  if (is.null(marks$comments)) marks$comments = character(0) # hmm, is this best??
+  marks$mark = as.numeric(marks$mark)
+  marks$award = as.character(marks$award)
+  if (is.null(marks$award) || is.na(marks$award)) marks$award = ""
+  cat("Marks = ", marks$mark, "\n")
+  cat("Award = ", marks$award, "\n")
+  cat("Comments = ")
+  print(marks$comments)
+  cat("\n")
+  cat("length(marks)=", length(marks), "\n")
+  marks
+}
+
+set_marks <- function(id, question, mark, award, comments) {
+  marks_db = read_marks()
+  row = which(marks_db$StudentID == id & marks_db$Question == question)
+  cat("Setting: mark=", mark, "\n")
+  print(str(mark))
+  cat("Setting: award=", award, "\n")
+  if (is.null(award)) award = ""
+  print(str(award))
+  if (is.null(comments)) comments = "" # empty
+  cat("Setting: comments=")
+  print(comments)
+  cat("\n")
+  cat("Setting: list(comments)=")
+  print(list(comments))
+  cat("\n")
+  marks_db$Mark[row] = mark
+  marks_db$Award[row] = award
+  marks_db$Comments[row] = list(comments)
+  write_csv(marks_db %>% flatten_listcol(Comments), "marks.csv")
 }

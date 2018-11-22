@@ -7,24 +7,16 @@ source("questions_csv.R")
 source("marks_csv.R")
 
 # The list for this marker to mark. This would be randomised by student (but not by question)
-mark_order <- read_marks() %>% select(StudentID, Question)
-
-current_student_id = "15969203" # make identifier a string for extensibility
-current_student_name = "Joanne Bloggs"
-current_question = 1
+mark_order <- read_marks() %>% select(StudentID, Question) %>% filter(Question == "1 (a)")
 
 shinyServer(function(input, output, session) {
 
   # Where we are at currently. Will have marker_id in future
-#  student <- reactiveValues(id = mark_order$StudentID[1],
-#                            details = get_student_details(mark_order$StudentID[1]),
-#                            pdf_url = get_student_pdf(mark_order$StudentID[1]))
   student <- reactiveValues(info = get_student_details(mark_order$StudentID[1]))
 
   current <- reactiveValues(question = 1,
                             question_name = mark_order$Question[1],
-                            marks = get_marks(mark_order$StudentID[1], mark_order$Question[1]),
-                            new_marks = get_marks(mark_order$StudentID[1], mark_order$Question[1]))
+                            marks = get_marks(mark_order$StudentID[1], mark_order$Question[1]))
 
   layout  <- reactiveValues(show_guide = TRUE,
                             question = read_question_layout(mark_order$Question[1]),
@@ -86,74 +78,85 @@ shinyServer(function(input, output, session) {
 
   # Update all comments whenever a single comment is added
   observe({
-   cat("all comments updated\n")
-   layout$comments
-   comments$all = union(comments$all, layout$comments)
-   choices = setdiff(comments$all, layout$comments)
-   updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
+    cat("all comments updated\n")
+    layout$comments
+    comments$all = union(comments$all, layout$comments)
+    choices = setdiff(comments$all, layout$comments)
+    updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
   })
 
   # Marks buttons
-  observeEvent(input$marks, {
-    # We need this as updateRadioGroupButtons et. al. don't update input$marks when updating/reset, even with renderUI
-    # see https://stackoverflow.com/questions/40309649/shiny-updateradiobuttons-cannot-clear-selected-item for example
-    cat("Clicked on a mark\n")
-    # Note: This isn't enough - input$marks might be 2 from a previous question, whereby
-    # clicking on 2 won't trigger this observer as input$marks isn't updated.
-    # We need a way of *forcing* input$marks to be back to empty or _something_. Maybe it's only on deselect??
-    current$new_marks$mark = input$marks # That isn't enough either, as it doesn't reset if you click the same thing
-                                         # i.e. if input$marks doesn't change between items
-  })
   observe({
     cat("Marks being updated\n")
-#    layout$question
     marks = layout$question$marks
     by = layout$question$by
     selected = current$marks$mark
+    if (is.na(selected)) selected = NULL
+    cat("selected = ", selected, "\n")
     marks = seq(0, marks, by=by)
     choices = c("X", marks)
     updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
   })
-
+  observe({
+    cat("Award being updated\n")
+    cat("Current award = ", isolate(current$marks$award), "\n")
+    award = current$marks$award
+    cat("award = ", award, "\n")
+    updateCheckboxGroupButtons(session, "star", selected = award)
+  })
+  
   # Next/Prev buttons
   observe({
     shinyjs::toggleState("next", current$question < nrow(mark_order))
     shinyjs::toggleState("prev", current$question > 1)
   })
+  changed <- function(old, new) {
+    if (is.null(new) && length(old) == 1 && nchar(old) == 0) return(FALSE) # NULL and empty are equivalent
+    if (length(new) != length(old)) return(TRUE) # length has changed
+    if (any(is.na(new) != is.na(old))) return(TRUE) # NA pattern has changed
+    # NA pattern hasn't changed, so just compare them ignoring the NAs
+    diff = any(new != old)
+    # if there's a difference in value, diff will be TRUE. If there's not it'll be FALSE or NA
+    !is.na(diff) && diff
+  }
   observeEvent(input$`next`, {
     if (current$question < nrow(mark_order)) {
-      # TODO: Write mark, award, layout to database
       cat("Going NEXT\n")
-      cat("Current mark=", isolate(current$marks$mark), "\n")
-      cat("Current new-mark=", isolate(current$marks$new_mark), "\n")
-      cat("Current input-mark=", isolate(input$marks), "\n")
-      cat("Current award=", isolate(current$marks$award), "\n")
-      cat("Current input-award=", isolate(input$awards), "\n")
+      marks = list(marks = as.numeric(input$marks),
+                   award = input$star,
+                   comments = input$comments)
+      diff = unlist(map2(current$marks, marks, changed))
+      if (any(diff)) { # we don't care if there's only NAs
+        cat("Something has changed...\n")
+        set_marks(id = student$info$id, question = current$question_name,
+                  mark = input$marks, award = input$star, comments = input$comments)
+      }
 
       # increment the question and/or student
       current$question = current$question + 1
       current$question_name = mark_order$Question[current$question]
       student$info = get_student_details(mark_order$StudentID[current$question])
-      cat("Got student details...\n")
-      print(isolate(student))
 
       # read in the new layout
       layout$question = read_question_layout(current$question_name)
       layout$comments = get_comments_for_question(current$question_name)
-      cat("Got layout...\n")
       # and update marks
+      current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = get_marks(student$info$id, current$question_name)
-      current$new_marks = get_marks(student$info$id, current$question_name)
     }
   })
   observeEvent(input$prev, {
     if (current$question > 1) {
       cat("Going PREV\n")
-      cat("Current mark=", isolate(current$marks$mark), "\n")
-      cat("Current new-mark=", isolate(current$marks$new_mark), "\n")
-      cat("Current input-mark=", isolate(input$marks), "\n")
-      cat("Current award=", isolate(current$marks$award), "\n")
-      cat("Current input-award=", isolate(input$awards), "\n")
+      marks = list(marks = as.numeric(input$marks),
+                   award = input$star,
+                   comments = input$comments)
+      diff = unlist(map2(current$marks, marks, changed))
+      if (any(diff)) { # we don't care if there's only NAs
+        cat("Something has changed...\n")
+        set_marks(id = student$info$id, question = current$question_name,
+                  mark = input$marks, award = input$star, comments = input$comments)
+      }
 
       # decrement the question
       current$question = current$question - 1
@@ -164,8 +167,8 @@ shinyServer(function(input, output, session) {
       layout$question = read_question_layout(current$question_name)
       layout$comments = get_comments_for_question(current$question_name)
       # and update marks
+      current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = get_marks(student$info$id, current$question_name)
-      current$new_marks = get_marks(student$info$id, current$question_name)
     }
   })
 
