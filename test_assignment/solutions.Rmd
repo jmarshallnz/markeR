@@ -1,0 +1,19 @@
+## Question 1 (a)
+
+- The `factor` command is changing the order of the tretament so that it is `low`, `medium`, `high` rather than alphabetical. [1]
+
+- The `WeaningWeight` column has 56 missing values. This is likely due to the lambs being removed from the study. [1]
+
+- The `na.omit` command is removing rows where we have missing values. [1]
+
+## Question 1 (b)
+
+- The plot with the paddocks within treatment groups is best, as it allows us to see the differences between treatment groups in addition to assessing how much variation there is across the 4 paddocks within each treatment group [2].
+
+- The plot demonstrates that lambs from ewes on the medium feed treatment appear to have the highest weaning weights, with the low and high groups being similar. There is not a great deal of variation between the paddocks within treatment, with the exception of paddock A which results in lower weaning weights compared to the other paddocks [3].
+
+## Question 1 (c)
+
+- Jittering is useful here as both age and weight are rounded - without jittering we would have overplotting as there are many observations with the same age, weight pairing [2]
+
+- There is an increasing trend between weaning age and weight within each sex, with rams being consistently heavier than ewes at the same weaning age. For a given age there is a large amount of variation in weaning weight around the trend [2].
