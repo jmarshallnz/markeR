@@ -7,7 +7,7 @@ source("questions_csv.R")
 source("marks_csv.R")
 
 # The list for this marker to mark. This would be randomised by student (but not by question)
-mark_order <- read_marks() %>% select(StudentID, Question) %>% filter(Question == "1 (a)")
+mark_order <- read_marks() %>% select(StudentID, Question) %>% arrange(Question, StudentID)
 
 shinyServer(function(input, output, session) {
 
