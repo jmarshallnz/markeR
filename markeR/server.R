@@ -58,9 +58,12 @@ shinyServer(function(input, output, session) {
   # Comment buttons
   output$comments = renderUI({
     comments = layout$comments
+    if (is.null(comments)) {
+      comments = character(0)
+    }
     selected = current$marks$comments
     checkboxGroupButtons("comments", choices = comments, selected=selected, status='light',
-                      direction="vertical", individual=TRUE, width='350px', justified = TRUE)
+                      direction="vertical", individual=TRUE, width='350px')
   })
 
   # Add comment updater
