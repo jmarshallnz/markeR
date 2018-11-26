@@ -1,13 +1,8 @@
 Question,Marks,By,Guide,Comments
-1 (a),3,1,"$$\begin{aligned}\bar{x} \pm 2 \frac{s}{\sqrt{n}} &= 2.3 \pm 2 \frac{1.2}{\sqrt{53}}\\\\ & = 2.3 \pm 0.33\\\\ & = (1.97, 2.63)\end{aligned}$$
- - 1 mark for calculation
- - 1 mark for answer
- - 1 mark for interpretation","list(c(""Calculation error"", ""Use a prediction interval instead of a confidence interval"", ""Incorrect standard error"", ""Interpretation is for individuals"", ""test""))"
-1 (b),5,1,"$$\begin{aligned}\bar{x} \pm 2 \frac{s}{\sqrt{n}} &= 2.3 \pm 2 \frac{1.2}{\sqrt{53}}\\\\ & = 2.3 \pm 0.33\\\\ & = (1.97, 2.63)\end{aligned}$$
- - 1 mark for calculation
- - 1 mark for answer
- - 1 mark for interpretation","list(c(""Calculation error"", ""Use a prediction interval instead of a confidence interval"", ""Incorrect standard error"", ""Interpretation is for individuals"", ""bob""))"
-1 (c),2,0.5,"$$\begin{aligned}\bar{x} \pm 2 \frac{s}{\sqrt{n}} &= 2.3 \pm 2 \frac{1.2}{\sqrt{53}}\\\\ & = 2.3 \pm 0.33\\\\ & = (1.97, 2.63)\end{aligned}$$
- - 1 mark for calculation
- - 1 mark for answer
- - 1 mark for interpretation","c(""Calculation error"", ""Use a prediction interval instead of a confidence interval"", ""Incorrect standard error"", ""Interpretation is for individuals"")"
+1 (a),4,1,"- The `factor` command is changing the order of the tretament so that it is `low`, `medium`, `high` rather than alphabetical. [2]
+- The `WeaningWeight` column has 56 missing values. This is likely due to the lambs being removed from the study. [1]
+- The `na.omit` command is removing rows where we have missing values. [1]","list(c(""R orders levels alphabetically, so we need to reorder."", ""Weaning weight was missing.""))"
+1 (b),5,1,"- The plot with the paddocks within treatment groups is best, as it allows us to see the differences between treatment groups in addition to assessing how much variation there is across the 4 paddocks within each treatment group [2].
+- The plot demonstrates that lambs from ewes on the medium feed treatment appear to have the highest weaning weights, with the low and high groups being similar. Shape and spread are similar across groups. There is not a great deal of variation between the paddocks within treatment, with the exception of paddock A which results in lower weaning weights compared to the other paddocks [3].","list(list(c(""Including paddock is useful to check they are similar."", ""Mention outliers if they're extreme. These aren't.""), ""Consider sample to sample variation when interpreting boxplots.""))"
+1 (c),5,1,"- Jittering is useful here as both age and weight are rounded - without jittering we would have overplotting as there are many observations with the same age, weight pairing [2]
+- There is an increasing trend between weaning age and weight within each sex [1], with rams being consistently heavier than ewes at the same weaning age [1]. For a given age there is a large amount of variation in weaning weight around the trend [1].","list(c(""Jitter is to help separate observations on the plot that have the same (x,y) pair."", ""Rams are heavier than ewes at same weaning age.""))"
