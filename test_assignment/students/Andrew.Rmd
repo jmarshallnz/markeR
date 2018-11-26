@@ -1,0 +1,60 @@
+---
+title: "Statistics project"
+author: "Andrew"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Exploratory analysis
+
+### Question 1 (a)
+
+This first code block loads some libraries we'll be using, reads the data in, and runs a summary
+
+```{r}
+library(ggplot2); theme_set(theme_bw())
+library(visreg)
+weaning_all = read.csv("http://www.massey.ac.nz/~jcmarsha/193301/data/weaning.csv")
+weaning_all$EweFeed = factor(weaning_all$EweFeed, levels=c("Low", "Medium", "High"))
+summary(weaning_all)
+weaning = na.omit(weaning_all)
+```
+
+**What is the `factor` command doing?**
+
+The factor command represents categorical variables in R.
+
+**Which one has the largest number of missing values? Why do you think that would be?**
+
+The paddock column. It is likely because ewes may have been moved around and/or accidentally mixed with one another.
+
+**What is the `na.omit` command doing?**
+
+This command removes rows which have missing values. In this data set there are missing values for weaning weight and lamb tags so these rows of data were removed.
+
+### Question 1 (b)
+
+The code block below contains several plotting options for the distribution of weaning weight between the feed treatment groups. The ewes from each feeding treatment were each kept in one of four paddocks. Alter the code block above to choose **one** plot that you feel best describes how the distribution of weaning weight differs between the feed treatments, and write a brief description of the distribution of weaning weights across the feeding treatments.
+
+```{r}
+ggplot(weaning, aes(x=EweFeed, y=WeaningWeight, fill=EweFeed)) + geom_boxplot() + ggtitle("Relationship Between Weaning Weight and Ewe Feed") + ylab("Weaning Weight (kg)") + xlab("Ewe Feed")
+```
+
+Overall, all feeding treatment groups are pretty symetrical with no noticeable skews. Ewes with high feeding treatment had a larger proprtion of outliers and the medium no outliers. The centre of the low and high feeding ewes were similar to eachother indicating similar weaning weights. The medium group apperaed to have a higher median than the other two.
+
+### Question 1 (c)
+
+The plot below shows the relationship between date of birth and weaning weight.
+
+```{r}
+ggplot(weaning, aes(x=WeaningAge, y=WeaningWeight, col=Sex)) + geom_point(position='jitter') +ggtitle("Relationship Between Weaning Weight and Age At Weaning") + ylab("Weaning weight (kg)") + xlab("Weaning Age (days)")
+```
+
+**What is the purpose of the `position='jitter'` command and why is it used here?**
+
+Jitter adds a small amount of noise to a numeric vector. It is used here to show a more apparent trend in the data. If jitter is not used then the data points look like one and there appears to be no trend when there may be one.
+
+**Briefly describe the relationship between weaning weight versus weaning age for ewe and ram lambs.**
+
+There is a weak positive relationship for ewe and ram lambs. This makes sense as the older they become in age before being weaned, the heavier they should become as they have more time to grow.
