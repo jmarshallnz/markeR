@@ -1,0 +1,20 @@
+---
+header-includes: \usepackage{booktabs}\usepackage{makecell}
+output: pdf_document
+---
+
+# Statistics Assignment marks
+
+## `r name` `r id`
+
+### Exploratory Analysis
+
+```{r, echo=FALSE}
+# TODO: This needs to be auto-generated as well. Should be pretty easy to do this part of it, but we have no support as yet for "Exercise" naming.
+library(knitr)
+library(kableExtra)
+options(knitr.table.format = "latex")
+marks %>% mutate(Comments = linebreak(Comments)) %>% select(Question, Comments, Mark) %>% kable("latex", escape=FALSE, booktabs=TRUE, align='lll', linesep='\\addlinespace') %>%
+  row_spec(nrow(marks)-1, hline_after = TRUE) %>%
+  row_spec(nrow(marks), bold = TRUE)
+```
