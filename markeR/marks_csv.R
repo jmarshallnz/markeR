@@ -23,7 +23,7 @@ read_marks <- function() {
   if (file.exists("marks.csv")) {
     read_csv("marks.csv", col_types = cols()) %>% unflatten_listcol(Comments)
   } else {
-    x = tibble(StudentID = c("123", "456", "789"), StudentName = c("Alice", "Bob", "Cara"), PDFurl = paste0(StudentName, ".pdf"))
+    x = tibble(StudentID = c("123", "456"), StudentName = c("Andrew", "Brenda"), PDFurl = paste0(StudentName, ".pdf"))
     y = tibble(Question = c("1 (a)", "1 (b)", "1 (c)"), Marker = "Doug", Mark = NA, Award=NA, Order = NA, Comments = list(NULL))
     crossing(x,y)
   }
@@ -35,8 +35,6 @@ get_student_details <- function(id) {
 
 get_marks <- function(id, question) {
   cat("Calling get_marks()")
-  print(id)
-  print(question)
   marks = read_marks() %>% filter(StudentID == id, Question == question) %>%
     select(mark = Mark, award = Award, comments = Comments) %>%
     as.list
