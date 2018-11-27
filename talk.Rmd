@@ -1,0 +1,60 @@
+---
+title: "markeR"
+subtitle: "A shiny app for marking assignments"
+author: "Jonathan Marshall"
+date: "29 November 2018"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      ratio: '16:9'
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+    css: ["default", "my-slides.css"]
+---
+
+# Idea
+
+- Marking digitially is slower than pen and paper
+
+- You still have to manually add and enter marks
+
+- Surely we can do better?
+
+---
+
+```{r, echo=FALSE}
+knitr::include_graphics("system.png")
+```
+
+---
+class: inverse, middle, center
+
+# Demo
+---
+
+# Advantages
+
+- Faster than annotating PDFs
+
+- Automatic mark collation and entry
+
+- Per-question/comment feedback for students and teachers
+
+- Randomised order, order effects, marker effects data are free
+
+---
+
+# Disadvantages
+
+- Feedback is in a separate file to the PDF
+
+- Feedback is less student-specific
+
+---
+class: inverse, middle, center
+
+# Questions
+
+from someone who hasn't asked one already?
