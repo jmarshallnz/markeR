@@ -19,3 +19,5 @@
 - There is an increasing trend between weaning age and weight within each sex [1], with rams being consistently heavier than ewes at the same weaning age [1]. For a given age there is a large amount of variation in weaning weight around the trend [1].
 
 [[Jitter is to help separate observations on the plot that have the same (x,y) pair.]]
+[[Clean axis labels and include units.]]
+[[Add a title.]]
