@@ -75,7 +75,7 @@ shinyServer(function(input, output, session) {
       # refresh the comment list from the database
       layout$comments <- get_comments_for_question(current$question_name)
       # and select that comment for the student
-      current$marks$comments = c(current$marks$comments, input$addcomment)
+      current$marks$comments = c(input$comments, input$addcomment)
     }
   })
 
@@ -110,7 +110,7 @@ shinyServer(function(input, output, session) {
   
   # Next/Prev buttons
   observe({
-    shinyjs::toggleState("next", current$question < nrow(mark_order))
+#    shinyjs::toggleState("next", current$question < nrow(mark_order))
     shinyjs::toggleState("prev", current$question > 1)
   })
   changed <- function(old, new) {
@@ -123,18 +123,18 @@ shinyServer(function(input, output, session) {
     !is.na(diff) && diff
   }
   observeEvent(input$`next`, {
-    if (current$question < nrow(mark_order)) {
-      cat("Going NEXT\n")
-      marks = list(marks = as.numeric(input$marks),
-                   award = input$star,
-                   comments = input$comments)
-      diff = unlist(map2(current$marks, marks, changed))
-      if (any(diff)) { # we don't care if there's only NAs
-        cat("Something has changed...\n")
-        set_marks(id = student$info$id, question = current$question_name,
-                  mark = input$marks, award = input$star, comments = input$comments)
-      }
+    cat("Going NEXT\n")
+    marks = list(marks = as.numeric(input$marks),
+                 award = input$star,
+                 comments = input$comments)
+    diff = unlist(map2(current$marks, marks, changed))
+    if (any(diff)) { # we don't care if there's only NAs
+      cat("Something has changed...\n")
+      set_marks(id = student$info$id, question = current$question_name,
+                mark = input$marks, award = input$star, comments = input$comments)
+    }
 
+    if (current$question < nrow(mark_order)) {
       # increment the question and/or student
       current$question = current$question + 1
       current$question_name = mark_order$Question[current$question]
