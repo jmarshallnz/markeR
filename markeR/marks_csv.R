@@ -1,6 +1,7 @@
 ## CSV based database for questions
 library(readr)
 library(dplyr)
+library(tidyr)
 library(purrr)
 
 flatten_listcol <- function(db, list_col, list_name) {
@@ -22,6 +23,8 @@ unflatten_listcol <- function(db, list_col) {
 read_marks <- function() {
   if (file.exists("marks.csv")) {
     read_csv("marks.csv", col_types = cols()) %>% unflatten_listcol(Comments)
+  } else if (file.exists("pre_marks.csv")) {
+    read_csv("pre_marks.csv", col_types = cols()) %>% unflatten_listcol(Comments)
   } else {
     x = tibble(StudentID = c("123", "456"), StudentName = c("Andrew", "Brenda"), PDFurl = paste0(StudentName, ".pdf"))
     y = tibble(Question = c("1 (a)", "1 (b)", "1 (c)"), Marker = "Doug", Mark = NA, Award=NA, Order = NA, Comments = list(NULL))
