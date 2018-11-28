@@ -16,17 +16,11 @@ output:
 
 # Idea
 
-- Marking digitially is slower than pen and paper
+- Marking digitally is slower than pen and paper
 
 - You still have to manually add and enter marks
 
 - Surely we can do better?
-
----
-
-```{r, echo=FALSE}
-knitr::include_graphics("system.png")
-```
 
 ---
 class: inverse, middle, center
@@ -43,8 +37,6 @@ class: inverse, middle, center
 - Per-question/comment feedback for students and teachers
 
 - Randomised order, order effects, marker effects data are free
-
----
 
 # Disadvantages
 
