@@ -3,18 +3,51 @@ header-includes: \usepackage{booktabs}\usepackage{makecell}
 output: pdf_document
 ---
 
-# Statistics Assignment marks
+# 227.212 Biostatistics assignment
 
-## `r name` `r id`
-
-### Exploratory Analysis
+## `r name` `r id` \hfill `r paste(overall$Mark, overall$Total, sep="/")`
 
 ```{r, echo=FALSE}
-# TODO: This needs to be auto-generated as well. Should be pretty easy to do this part of it, but we have no support as yet for "Exercise" naming.
 library(knitr)
 library(kableExtra)
 options(knitr.table.format = "latex")
-marks %>% mutate(Comments = linebreak(Comments)) %>% select(Question, Comments, Mark) %>% kable("latex", escape=FALSE, booktabs=TRUE, align='lll', linesep='\\addlinespace') %>%
-  row_spec(nrow(marks)-1, hline_after = TRUE) %>%
-  row_spec(nrow(marks), bold = TRUE)
+```
+
+### Exercise 1
+
+```{r, echo=FALSE}
+# TODO: This needs to be auto-generated as well. Should be pretty easy to do this part of it, but we have no support as yet for "Exercise" naming.
+ex = marks[[1]]
+ex %>%
+  mutate(Comments = linebreak(knitr:::escape_latex(Comments))) %>% select(Question, Comments, Mark) %>%
+  kable("latex", escape=FALSE, booktabs=TRUE, align='llr', linesep='\\addlinespace') %>%
+  row_spec(nrow(ex)-1, hline_after = TRUE) %>%
+  row_spec(nrow(ex), bold = TRUE) %>%
+  column_spec(2, width="13cm")
+```
+
+### Exercise 2
+
+```{r, echo=FALSE}
+# TODO: This needs to be auto-generated as well. Should be pretty easy to do this part of it, but we have no support as yet for "Exercise" naming.
+ex = marks[[2]]
+ex %>%
+  mutate(Comments = linebreak(knitr:::escape_latex(Comments))) %>% select(Question, Comments, Mark) %>%
+  kable("latex", escape=FALSE, booktabs=TRUE, align='llr', linesep='\\addlinespace') %>%
+  row_spec(nrow(ex)-1, hline_after = TRUE) %>%
+  row_spec(nrow(ex), bold = TRUE) %>%
+  column_spec(2, width="13cm")
+```
+
+### Exercise 3
+
+```{r, echo=FALSE}
+# TODO: This needs to be auto-generated as well. Should be pretty easy to do this part of it, but we have no support as yet for "Exercise" naming.
+ex = marks[[3]]
+ex %>%
+  mutate(Comments = linebreak(knitr:::escape_latex(Comments))) %>% select(Question, Comments, Mark) %>%
+  kable("latex", escape=FALSE, booktabs=TRUE, align='llr', linesep='\\addlinespace') %>%
+  row_spec(nrow(ex)-1, hline_after = TRUE) %>%
+  row_spec(nrow(ex), bold = TRUE) %>%
+  column_spec(2, width="13cm")
 ```
