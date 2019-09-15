@@ -39,15 +39,13 @@ shinyServer(function(input, output, session) {
       current$question = 1
       current$question_name = marker$order$Question[1]
       current$marks = get_marks(marker$order$StudentID[1], marker$order$Question[1])
-  
+
       layout$show_guide = TRUE
       layout$question = read_question_layout(marker$order$Question[1])
-      layout$comments = get_comments_for_question(marker$order$Question[1])
+      layout$comments = unique(get_top_comments(marker$order$Question[1]), current$marks$comments)
+      layout$all_comments <- get_all_comments_for_question(marker$order$Question[1])
     }
   })
-
-  # All comments, so that we can update the choice list when the user has added one
-  comments <- reactiveValues(all = get_all_comments())
 
   # Current student
   observe({
@@ -104,19 +102,19 @@ shinyServer(function(input, output, session) {
       cat("Adding a new comment\n")
       # new comment - add to the database
       add_comment_to_question(current$question_name, input$addcomment)
-      # refresh the comment list from the database
-      layout$comments <- get_comments_for_question(current$question_name)
       # and select that comment for the student
       current$marks$comments = c(input$comments, input$addcomment)
+      # refresh the comment list from the database
+      layout$comments <- unique(get_top_comments(current$question_name), current$marks$comments)
+      layout$all_comments <- get_all_comments_for_question(current$question_name)
     }
   })
 
   # Update all comments whenever a single comment is added
   observe({
     cat("all comments updated\n")
-    layout$comments
-    comments$all = union(comments$all, layout$comments)
-    choices = setdiff(comments$all, layout$comments)
+    layout$all_comments
+    choices = setdiff(layout$all_comments, layout$comments)
     updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
   })
 
@@ -174,12 +172,14 @@ shinyServer(function(input, output, session) {
       current$question_name = marker$order$Question[current$question]
       student$info = get_student_details(marker$order$StudentID[current$question])
 
-      # read in the new layout
-      layout$question = read_question_layout(current$question_name)
-      layout$comments = get_comments_for_question(current$question_name)
       # and update marks
       current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = get_marks(student$info$id, current$question_name)
+
+      # read in the new layout
+      layout$question = read_question_layout(current$question_name)
+      layout$comments = unique(get_top_comments(current$question_name), current$marks$comments)
+      layout$all_comments = get_all_comments_for_question(current$question_name)
     }
   })
   observeEvent(input$next_unmarked, {
@@ -200,15 +200,17 @@ shinyServer(function(input, output, session) {
       current$question = current$question + 1
       current$question_name = marker$order$Question[current$question]
       student$info = get_student_details(marker$order$StudentID[current$question])
-      
-      # read in the new layout
-      layout$question = read_question_layout(current$question_name)
-      layout$comments = get_comments_for_question(current$question_name)
+
       # and update marks
       current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = get_marks(student$info$id, current$question_name)
       if (!length(current$marks$mark) || is.na(current$marks$mark))
         done = TRUE
+
+      # read in the new layout
+      layout$question = read_question_layout(current$question_name)
+      layout$comments = unique(get_top_comments(current$question_name), current$marks$comments)
+      layout$all_comments = get_all_comments_for_question(current$question_name)
     }
   })
   observeEvent(input$prev, {
@@ -229,12 +231,14 @@ shinyServer(function(input, output, session) {
       current$question_name = marker$order$Question[current$question]
       student$info = get_student_details(marker$order$StudentID[current$question])
 
-      # read in the new layout
-      layout$question = read_question_layout(current$question_name)
-      layout$comments = get_comments_for_question(current$question_name)
       # and update marks
       current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = get_marks(student$info$id, current$question_name)
+
+      # read in the new layout
+      layout$question = read_question_layout(current$question_name)
+      layout$comments = unique(get_top_comments(current$question_name), current$marks$comments)
+      layout$all_comments = get_all_comments_for_question(current$question_name)
     }
   })
 

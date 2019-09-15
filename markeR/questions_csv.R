@@ -39,7 +39,7 @@ max_question <- function() {
   read_questions() %>% pull(Question) %>% max()
 }
 
-get_comments_for_question <- function(question) {
+get_all_comments_for_question <- function(question) {
   read_questions() %>%
     filter(Question == question) %>%
     pull(Comments) %>%

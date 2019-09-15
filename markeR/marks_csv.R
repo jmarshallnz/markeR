@@ -55,6 +55,17 @@ get_marks <- function(id, question) {
   marks
 }
 
+get_top_comments <- function(question, n=3) {
+  cat("Calling get_top_comments()")
+  comments = read_marks() %>% filter(Question == question) %>%
+    pull(Comments) %>% unlist()
+  if (length(comments) > 0) {
+    comments = data.frame(Comments = comments) %>% tally(Comments) %>% top_n(3) %>%
+      pull(Comments)
+  }
+  comments
+}
+
 set_marks <- function(id, question, mark, award, comments) {
   marks_db = read_marks()
   row = which(marks_db$StudentID == id & marks_db$Question == question)
