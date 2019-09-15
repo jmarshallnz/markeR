@@ -6,21 +6,45 @@ library(stringr)
 source("questions_csv.R")
 source("marks_csv.R")
 
-# The list for this marker to mark. This would be randomised by student (but not by question)
-mark_order <- read_marks() %>% select(StudentID, Question) %>% arrange(Question, StudentID)
+markers <- read_marks() %>% pull(Marker) %>% unique()
 
 shinyServer(function(input, output, session) {
 
+  marker = reactiveValues(id = "",
+                          order = data.frame(StudentID = NULL, Question = NULL))
+  
   # Where we are at currently. Will have marker_id in future
-  student <- reactiveValues(info = get_student_details(mark_order$StudentID[1]))
+  student <- reactiveValues(info = NULL) #get_student_details(marker$order$StudentID[1]))
 
   current <- reactiveValues(question = 1,
-                            question_name = mark_order$Question[1],
-                            marks = get_marks(mark_order$StudentID[1], mark_order$Question[1]))
-
+                            question_name = NULL, #marker$order$Question[1],
+                            marks = NULL) #get_marks(marker$order$StudentID[1], marker$order$Question[1]))
+  
   layout  <- reactiveValues(show_guide = TRUE,
-                            question = read_question_layout(mark_order$Question[1]),
-                            comments = get_comments_for_question(mark_order$Question[1]))
+                            question = NULL, #read_question_layout(marker$order$Question[1]),
+                            comments = NULL) #get_comments_for_question(marker$order$Question[1]))
+
+  # load the data based one the URL?
+  observe({
+    query = parseQueryString(session$clientData$url_search)
+    marker$id = query[['m']];
+
+    if (!is.null(marker$id) && marker$id %in% markers) {
+      cat("Marker id = ", marker$id, "\n")
+      marker$order = read_marks() %>% filter(Marker == marker$id) %>% arrange(Order) %>% select(StudentID, Question)
+
+      # setup all the info above
+      student$info = get_student_details(marker$order$StudentID[1])
+  
+      current$question = 1
+      current$question_name = marker$order$Question[1]
+      current$marks = get_marks(marker$order$StudentID[1], marker$order$Question[1])
+  
+      layout$show_guide = TRUE
+      layout$question = read_question_layout(marker$order$Question[1])
+      layout$comments = get_comments_for_question(marker$order$Question[1])
+    }
+  })
 
   # All comments, so that we can update the choice list when the user has added one
   comments <- reactiveValues(all = get_all_comments())
@@ -110,7 +134,7 @@ shinyServer(function(input, output, session) {
   
   # Next/Prev buttons
   observe({
-#    shinyjs::toggleState("next", current$question < nrow(mark_order))
+#    shinyjs::toggleState("next", current$question < nrow(marker$order))
     shinyjs::toggleState("prev", current$question > 1)
   })
   changed <- function(old, new) {
@@ -134,11 +158,11 @@ shinyServer(function(input, output, session) {
                 mark = input$marks, award = input$star, comments = input$comments)
     }
 
-    if (current$question < nrow(mark_order)) {
+    if (current$question < nrow(marker$order)) {
       # increment the question and/or student
       current$question = current$question + 1
-      current$question_name = mark_order$Question[current$question]
-      student$info = get_student_details(mark_order$StudentID[current$question])
+      current$question_name = marker$order$Question[current$question]
+      student$info = get_student_details(marker$order$StudentID[current$question])
 
       # read in the new layout
       layout$question = read_question_layout(current$question_name)
@@ -163,8 +187,8 @@ shinyServer(function(input, output, session) {
 
       # decrement the question
       current$question = current$question - 1
-      current$question_name = mark_order$Question[current$question]
-      student$info = get_student_details(mark_order$StudentID[current$question])
+      current$question_name = marker$order$Question[current$question]
+      student$info = get_student_details(marker$order$StudentID[current$question])
 
       # read in the new layout
       layout$question = read_question_layout(current$question_name)
