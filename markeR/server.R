@@ -182,6 +182,35 @@ shinyServer(function(input, output, session) {
       current$marks = get_marks(student$info$id, current$question_name)
     }
   })
+  observeEvent(input$next_unmarked, {
+    cat("Going NEXT unmarked\n")
+    marks = list(marks = as.numeric(input$marks),
+                 award = input$star,
+                 comments = input$comments)
+    diff = unlist(map2(current$marks, marks, changed))
+    if (any(diff)) { # we don't care if there's only NAs
+      cat("Something has changed...\n")
+      set_marks(id = student$info$id, question = current$question_name,
+                mark = input$marks, award = input$star, comments = input$comments)
+    }
+    
+    done <- FALSE
+    while (!done && current$question < nrow(marker$order)) {
+      # increment the question and/or student
+      current$question = current$question + 1
+      current$question_name = marker$order$Question[current$question]
+      student$info = get_student_details(marker$order$StudentID[current$question])
+      
+      # read in the new layout
+      layout$question = read_question_layout(current$question_name)
+      layout$comments = get_comments_for_question(current$question_name)
+      # and update marks
+      current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
+      current$marks = get_marks(student$info$id, current$question_name)
+      if (!length(current$marks$mark) || is.na(current$marks$mark))
+        done = TRUE
+    }
+  })
   observeEvent(input$prev, {
     if (current$question > 1) {
       cat("Going PREV\n")

@@ -25,8 +25,9 @@ dashboardPage(
                          status="star"),id="markgroup"),
     tags$hr(),
     div(id = "pagebuttons", style="width:340px",
-      actionButton("prev", "Prev", width='30%', style="display:inline-block;", class="btn-page"),
-      actionButton("next", "Next", width='30%', style="display:inline-block; float:right", class="btn-page"))
+      actionButton("prev", "Prev", width='20%', style="display:inline-block;", class="btn-page"),
+      actionButton("next", "Next", width='20%', style="display:inline-block;", class="btn-page"),
+      actionButton("next_unmarked", "Unmarked", width='30%', style="display:inline-block; float:right", class="btn-page"))
   ),
   dashboardBody(
     useShinyjs(),
