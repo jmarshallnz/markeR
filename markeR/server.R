@@ -56,7 +56,11 @@ shinyServer(function(input, output, session) {
     shinyjs::html("pageHeader", header)
   })
   output$pdfviewer <- renderText({
-    return(paste('<iframe name="pdfviewer" style="width:100%; border:0; height:100%" src="', paste0(student$info$pdf_url, "#toolbar=0&navpanes=0"), '"></iframe>', sep = ""))
+    if (length(student$info$pdf_url)) {
+      return(paste('<iframe name="pdfviewer" style="width:100%; border:0; height:100%" src="', paste0(student$info$pdf_url, "#toolbar=0&navpanes=0"), '"></iframe>', sep = ""))
+    } else {
+      return('')
+    }
   })
 
   # Current question
@@ -66,7 +70,11 @@ shinyServer(function(input, output, session) {
 
   # Current guide
   output$markingguide = renderUI({
-    html <- markdown::markdownToHTML(text = layout$question$guide, fragment.only = TRUE)
+    if (length(layout$question$guide)) {
+      html <- markdown::markdownToHTML(text = layout$question$guide, fragment.only = TRUE)
+    } else {
+      html <- ""
+    }
     Encoding(html) <- "UTF-8"
     withMathJax(HTML(html))
   })
@@ -116,13 +124,15 @@ shinyServer(function(input, output, session) {
   observe({
     cat("Marks being updated\n")
     marks = layout$question$marks
-    by = layout$question$by
-    selected = current$marks$mark
-    if (is.na(selected)) selected = NULL
-    cat("selected = ", selected, "\n")
-    marks = seq(0, marks, by=by)
-    choices = c("X", marks)
-    updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
+    if (length(marks)) {
+      by = layout$question$by
+      selected = current$marks$mark
+      if (length(selected) && is.na(selected)) selected = NULL
+      cat("selected = ", selected, "\n")
+      marks = seq(0, marks, by=by)
+      choices = c("X", marks)
+      updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
+    }
   })
   observe({
     cat("Award being updated\n")
