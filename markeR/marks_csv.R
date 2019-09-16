@@ -42,6 +42,7 @@ get_marks <- function(id, question) {
     select(mark = Mark, award = Award, comments = Comments) %>%
     as.list
   marks$comments = unlist(marks$comments)
+  marks$comments = setdiff(marks$comments, "")
   if (is.null(marks$comments)) marks$comments = character(0) # hmm, is this best??
   marks$mark = as.numeric(marks$mark)
   marks$award = as.character(marks$award)
@@ -56,11 +57,11 @@ get_marks <- function(id, question) {
 }
 
 get_top_comments <- function(question, n=3) {
-  cat("Calling get_top_comments()")
+  cat("Calling get_top_comments()\n")
   comments = read_marks() %>% filter(Question == question) %>%
     pull(Comments) %>% unlist()
   if (length(comments) > 0) {
-    comments = data.frame(Comments = comments) %>% tally(Comments) %>% top_n(3) %>%
+    comments = data.frame(Comments = comments, stringsAsFactors = FALSE) %>% filter(Comments != "") %>% count(Comments) %>% top_n(3, n) %>%
       pull(Comments)
   }
   comments
