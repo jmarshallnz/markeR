@@ -64,6 +64,7 @@ get_top_comments <- function(question, n=3) {
     comments = data.frame(Comments = comments, stringsAsFactors = FALSE) %>% filter(Comments != "") %>% count(Comments) %>% top_n(3, n) %>%
       pull(Comments)
   }
+  cat("found", length(comments), "comments\n")
   comments
 }
 
@@ -84,6 +85,14 @@ set_marks <- function(id, question, mark, award, comments) {
   cat("\n")
   marks_db$Mark[row] = mark
   marks_db$Award[row] = award
+  marks_db$Comments[row] = list(comments)
+  write_csv(marks_db %>% flatten_listcol(Comments), "marks.csv")
+}
+
+set_comments <- function(id, question, comments) {
+  marks_db = read_marks()
+  row = which(marks_db$StudentID == id & marks_db$Question == question)
+  if (is.null(comments)) comments = "" # empty
   marks_db$Comments[row] = list(comments)
   write_csv(marks_db %>% flatten_listcol(Comments), "marks.csv")
 }

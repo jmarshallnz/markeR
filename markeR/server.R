@@ -108,6 +108,7 @@ shinyServer(function(input, output, session) {
       add_comment_to_question(current$question_name, input$addcomment)
       # and select that comment for the student
       current$marks$comments = c(input$comments, input$addcomment)
+      set_comments(id = student$info$id, question = current$question_name, comments = current$marks$comments)
       # refresh the comment list from the database
       layout$comments <- get_top_comments(current$question_name)
       layout$all_comments <- get_all_comments_for_question(current$question_name)
@@ -164,6 +165,7 @@ shinyServer(function(input, output, session) {
                  award = input$star,
                  comments = input$comments)
     diff = unlist(map2(current$marks, marks, changed))
+    print(diff)
     if (any(diff)) { # we don't care if there's only NAs
       cat("Something has changed...\n")
       set_marks(id = student$info$id, question = current$question_name,
