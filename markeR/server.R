@@ -55,7 +55,7 @@ shinyServer(function(input, output, session) {
   # Current student
   observe({
     cat("updating the pageHeader\n")
-    header = paste(student$info$id, student$info$name)
+    header = paste(student$info$id, student$info$name, span(style="float:right;", layout$num_left))
     shinyjs::html("pageHeader", header)
   })
   output$pdfviewer <- renderText({
@@ -187,6 +187,7 @@ shinyServer(function(input, output, session) {
       layout$question = read_question_layout(current$question_name)
       layout$comments = get_top_comments(current$question_name)
       layout$all_comments = get_all_comments_for_question(current$question_name)
+      layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
 
       # and update marks
       current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
@@ -216,7 +217,8 @@ shinyServer(function(input, output, session) {
       layout$question = read_question_layout(current$question_name)
       layout$comments = get_top_comments(current$question_name)
       layout$all_comments = get_all_comments_for_question(current$question_name)
-
+      layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
+      
       # and update marks
       current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = get_marks(student$info$id, current$question_name)
@@ -246,7 +248,8 @@ shinyServer(function(input, output, session) {
       layout$question = read_question_layout(current$question_name)
       layout$comments = get_top_comments(current$question_name)
       layout$all_comments = get_all_comments_for_question(current$question_name)
-
+      layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
+      
       # and update marks
       current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = get_marks(student$info$id, current$question_name)
