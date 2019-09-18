@@ -27,23 +27,28 @@ shinyServer(function(input, output, session) {
   # load the data based one the URL?
   observe({
     query = parseQueryString(session$clientData$url_search)
-    marker$id = query[['m']];
-
-    if (!is.null(marker$id) && marker$id %in% markers) {
-      cat("Marker id = ", marker$id, "\n")
-      marker$order = read_marks() %>% filter(Marker == marker$id) %>% arrange(Order) %>% select(StudentID, Question)
-
-      # setup all the info above
-      student$info = get_student_details(marker$order$StudentID[1])
+    cat("called into query observer\n")
+    if (is.null(marker$id) || !is.null(query[['m']]) && query[['m']] != marker$id) {
+      cat('marker id has changed\n')
+      marker$id = query[['m']];
   
-      current$question = 1
-      current$question_name = marker$order$Question[1]
-      current$marks = get_marks(marker$order$StudentID[1], marker$order$Question[1])
-
-      layout$show_guide = TRUE
-      layout$question = read_question_layout(marker$order$Question[1])
-      layout$comments = get_top_comments(marker$order$Question[1])
-      layout$all_comments <- get_all_comments_for_question(marker$order$Question[1])
+      if (!is.null(marker$id) && marker$id %in% markers) {
+        cat("Marker id = ", marker$id, "\n")
+        marker$order = read_marks() %>% filter(Marker == marker$id) %>% arrange(Order) %>% select(StudentID, Question)
+  
+        # setup all the info above
+        student$info = get_student_details(marker$order$StudentID[1])
+    
+        current$question = 1
+        current$question_name = marker$order$Question[1]
+        current$marks = get_marks(marker$order$StudentID[1], marker$order$Question[1])
+  
+        layout$show_guide = TRUE
+        layout$question = read_question_layout(marker$order$Question[1])
+        layout$comments = get_top_comments(marker$order$Question[1])
+        layout$all_comments <- get_all_comments_for_question(marker$order$Question[1])
+        layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
+      }
     }
   })
 
