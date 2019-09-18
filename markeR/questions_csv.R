@@ -54,7 +54,7 @@ get_all_comments <- function() {
 
 add_comment_to_question <- function(question, comment) {
   question_db = read_questions()
-  comments = question_db %>% filter(Question == '1.1') %>% pull(Comments) %>% unlist() %>% c(comment)
+  comments = question_db %>% filter(Question == question) %>% pull(Comments) %>% unlist() %>% c(comment)
   question_db$Comments[question_db$Question == question] <- list(comments)
   write_csv(question_db %>% flatten_listcol(Comments), "questions.csv")
 }
