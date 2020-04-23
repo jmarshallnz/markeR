@@ -20,9 +20,11 @@ unflatten_listcol <- function(db, list_col) {
 #all.equal(unpacked$Comments, question_db$Comments)
 
 # first time creation
-read_marks <- function() {
-  if (file.exists("marks.csv")) {
-    read_csv("marks.csv", col_types = cols()) %>% unflatten_listcol(Comments)
+read_marks <- function(filename = NULL) {
+  if (is.null(filename))
+    filename = "marks.csv"
+  if (file.exists(filename)) {
+    read_csv(filename, col_types = cols()) %>% unflatten_listcol(Comments)
   } else if (file.exists("pre_marks.csv")) {
     read_csv("pre_marks.csv", col_types = cols()) %>% unflatten_listcol(Comments)
   } else {
@@ -86,7 +88,7 @@ set_marks <- function(id, question, mark, award, comments) {
   marks_db$Mark[row] = mark
   marks_db$Award[row] = award
   marks_db$Comments[row] = list(comments)
-  write_csv(marks_db %>% flatten_listcol(Comments), "marks.csv")
+  write_marks(marks_db)
 }
 
 set_comments <- function(id, question, comments) {
@@ -94,5 +96,11 @@ set_comments <- function(id, question, comments) {
   row = which(marks_db$StudentID == id & marks_db$Question == question)
   if (is.null(comments)) comments = "" # empty
   marks_db$Comments[row] = list(comments)
-  write_csv(marks_db %>% flatten_listcol(Comments), "marks.csv")
+  write_marks(marks_db)
+}
+
+write_marks <- function(marks_db, filename = NULL) {
+  if (is.null(filename))
+    filename = "marks.csv"
+  write_csv(marks_db %>% flatten_listcol(Comments), filename)
 }
