@@ -19,10 +19,13 @@ unflatten_listcol <- function(db, list_col) {
 #all.equal(unpacked$Comments, question_db$Comments)
 
 # first time creation
-read_questions <- function() {
-  if (file.exists("questions.csv")) {
-    read_csv("questions.csv", col_types = cols()) %>% unflatten_listcol(Comments)
+read_questions <- function(filename=NULL) {
+  if (is.null(filename))
+    filename = "questions.csv"
+  if (file.exists(filename)) {
+    read_csv(filename, col_types = cols()) %>% unflatten_listcol(Comments)
   } else {
+    warning("Default questions in use")
     tibble(Question = c("1 (a)", "1 (b)", "1 (c)"), Marks = c(3,5,2), By=c(1,1,0.5), Guide="$$\\begin{aligned}\\bar{x} \\pm 2 \\frac{s}{\\sqrt{n}} &= 2.3 \\pm 2 \\frac{1.2}{\\sqrt{53}}\\\\\\\\ & = 2.3 \\pm 0.33\\\\\\\\ & = (1.97, 2.63)\\end{aligned}$$\n - 1 mark for calculation\n - 1 mark for answer\n - 1 mark for interpretation", Comments = list(c("Calculation error", "Use a prediction interval instead of a confidence interval", "Incorrect standard error", "Interpretation is for individuals")))
   }
 }
