@@ -1,6 +1,6 @@
 # load in the database reading stuff
-source("marks_csv.R")
-source("questions_csv.R")
+source(here::here("markeR/marks_csv.R"))
+source(here::here("markeR/questions_csv.R"))
 library(fs)
 
 collapse <- function(comments) {
@@ -37,7 +37,7 @@ create_feedback <- function(marks, out_dir, clean=TRUE) {
                     output_dir = student_outdir, envir=student.envir, clean=clean)
 }
 
-feedback <- function() {
+feedback <- function(our_dir) {
   # read in the marks
   marks = read_marks() %>% left_join(read_questions() %>% select(-Comments, Total=Marks)) %>%
     tidyr::extract(Question, into=c("Exercise", "Question"), regex="([0-9]+).([0-9]+)", remove=TRUE, convert=TRUE) %>%
@@ -45,11 +45,9 @@ feedback <- function() {
     # HACK
     mutate(Mark = as.numeric(Mark))
   # HACK
-  marks %>% split(.$StudentID) %>% lapply(create_feedback, out_dir = "../227212_ass1/feedback")
+  marks %>% split(.$StudentID) %>% lapply(create_feedback, out_dir = our_dir)
 }
 
-# fixup a comment for Olivia
-marks$Comments <- lapply(marks$Comments, function(x) { sub("simmetry", "symmetry", x) })
-
 # dump marks out to spreadsheet
-read_marks() %>% group_by(StudentID, StudentName) %>% summarise(Mark = sum(Mark)) %>% write_csv("../227212_ass1/227212_ass1.csv")
+#read_marks(here::here("markeR/marks.csv")) %>% group_by(StudentID, StudentName) %>% mutate(Mark = as.numeric(Mark)) %>% summarise(Mark = sum(Mark)) %>% write_csv("227215_ass1.csv")
+
