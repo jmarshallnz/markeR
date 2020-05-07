@@ -19,10 +19,14 @@ shinyServer(function(input, output, session) {
   # Where we are at currently. Will have marker_id in future
   student <- reactiveValues(info = NULL) #get_student_details(marker$order$StudentID[1]))
 
+  # The current (and database) state of marking.
+  # We use marks to store the marks temporarily, as input$foo doesn't necessarily update
+  # immediately, so we need something to compare to.
   current <- reactiveValues(question = 1,
-                            question_name = NULL, #marker$order$Question[1],
-                            marks = NULL) #get_marks(marker$order$StudentID[1], marker$order$Question[1]))
-  
+                             question_name = NULL, #marker$order$Question[1],
+                             marks = NULL,
+                             db_marks = NULL) #get_marks(marker$order$StudentID[1], marker$order$Question[1]))
+
   layout  <- reactiveValues(show_guide = TRUE,
                             question = NULL, #read_question_layout(marker$order$Question[1]),
                             comments = NULL) #get_comments_for_question(marker$order$Question[1]))
@@ -44,7 +48,7 @@ shinyServer(function(input, output, session) {
     
         current$question = 1
         current$question_name = marker$order$Question[1]
-        current$marks = get_marks(marker$order$StudentID[1], marker$order$Question[1])
+        current$marks = current$db_marks = get_marks(marker$order$StudentID[1], marker$order$Question[1])
   
         layout$show_guide = TRUE
         layout$question = read_question_layout(marker$order$Question[1])
@@ -107,6 +111,10 @@ shinyServer(function(input, output, session) {
     checkboxGroupButtons("comments", choices = comments, selected=selected, status='light',
                       direction="vertical", individual=TRUE, width='350px')
   })
+  observeEvent(input$comments, {
+    log("updating current comments from input\n")
+    current$marks$comments = input$comments
+  })
 
   # Add comment updater
   observeEvent(input$addcomment, {
@@ -145,12 +153,21 @@ shinyServer(function(input, output, session) {
       updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
     }
   })
+  observeEvent(input$marks, {
+    log("updating current marks from input:", input$marks, " (current=", current$marks$mark,")\n")
+    current$marks$mark = input$marks
+  })
+
   observe({
     log("Award being updated\n")
     log("Current award = ", isolate(current$marks$award), "\n")
     award = current$marks$award
     log("award = ", award, "\n")
     updateCheckboxGroupButtons(session, "star", selected = award)
+  })
+  observeEvent(input$star, {
+    log("updating current star from input:", input$star, " (current=", current$marks$award,")\n")
+    current$marks$award = input$star
   })
   
   # Next/Prev buttons
@@ -169,10 +186,7 @@ shinyServer(function(input, output, session) {
   }
   observeEvent(input$`next`, {
     log("Going NEXT\n")
-    marks = list(marks = as.numeric(input$marks),
-                 award = input$star,
-                 comments = input$comments)
-    diff = unlist(map2(current$marks, marks, changed))
+    diff = unlist(map2(current$db_marks, current$marks, changed))
     log("diff=", diff, "\n")
     if (any(diff)) { # we don't care if there's only NAs
       log("Something has changed...\n")
@@ -193,16 +207,13 @@ shinyServer(function(input, output, session) {
       layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
 
       # and update marks
-      current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
-      current$marks = get_marks(student$info$id, current$question_name)
+      current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
+      current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
     }
   })
   observeEvent(input$next_unmarked, {
     log("Going NEXT unmarked\n")
-    marks = list(marks = as.numeric(input$marks),
-                 award = input$star,
-                 comments = input$comments)
-    diff = unlist(map2(current$marks, marks, changed))
+    diff = unlist(map2(current$db_marks, current$marks, changed))
     if (any(diff)) { # we don't care if there's only NAs
       log("Something has changed...\n")
       set_marks(id = student$info$id, question = current$question_name,
@@ -223,8 +234,8 @@ shinyServer(function(input, output, session) {
       layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
       
       # and update marks
-      current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
-      current$marks = get_marks(student$info$id, current$question_name)
+      current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
+      current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
       if (!length(current$marks$mark) || is.na(current$marks$mark))
         done = TRUE
     }
@@ -232,10 +243,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$prev, {
     if (current$question > 1) {
       log("Going PREV\n")
-      marks = list(marks = as.numeric(input$marks),
-                   award = input$star,
-                   comments = input$comments)
-      diff = unlist(map2(current$marks, marks, changed))
+      diff = unlist(map2(current$db_marks, current$marks, changed))
       log("diff=", diff, "\n")
       if (any(diff)) { # we don't care if there's only NAs
         log("Something has changed...\n")
@@ -253,10 +261,10 @@ shinyServer(function(input, output, session) {
       layout$comments = get_top_comments(current$question_name)
       layout$all_comments = get_all_comments_for_question(current$question_name)
       layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
-      
+
       # and update marks
-      current$marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
-      current$marks = get_marks(student$info$id, current$question_name)
+      current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
+      current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
     }
   })
 
