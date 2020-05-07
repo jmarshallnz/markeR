@@ -4,6 +4,13 @@ library(dplyr)
 library(tidyr)
 library(purrr)
 
+logfile <- "log.txt"
+log <- function(...) { cat(..., file=logfile, append=TRUE) }
+log_list <- function(x) {
+  for (i in seq_len(length(x)))
+    log(x[[i]], "\n")
+}
+
 flatten_listcol <- function(db, list_col, list_name) {
   lc = enquo(list_col)
   flatten <- function(x) { paste0(capture.output(dput(x)), collapse="") }
@@ -39,7 +46,7 @@ get_student_details <- function(id) {
 }
 
 get_marks <- function(id, question) {
-  cat("Calling get_marks()")
+  log("get_marks for student ", id, " question ", question, "\n")
   marks = read_marks() %>% filter(StudentID == id, Question == question) %>%
     select(mark = Mark, award = Award, comments = Comments) %>%
     as.list
@@ -49,42 +56,38 @@ get_marks <- function(id, question) {
   marks$mark = as.numeric(marks$mark)
   marks$award = as.character(marks$award)
   if (is.null(marks$award) || is.na(marks$award)) marks$award = ""
-  cat("Marks = ", marks$mark, "\n")
-  cat("Award = ", marks$award, "\n")
-  cat("Comments = ")
-  print(marks$comments)
-  cat("\n")
-  cat("length(marks)=", length(marks), "\n")
+  log("get_marks: Marks = ", marks$mark, "\n")
+  log("get_marks: Award = ", marks$award, "\n")
+  log("get_marks: Comments = ", "\n")
+  log_list(marks$comments)
+  log("get_marks: length(marks)=", length(marks), "\n")
   marks
 }
 
 get_top_comments <- function(question, n=3) {
-  cat("Calling get_top_comments()\n")
+  log("Calling get_top_comments()\n")
   comments = read_marks() %>% filter(Question == question) %>%
     pull(Comments) %>% unlist()
   if (length(comments) > 0) {
     comments = data.frame(Comments = comments, stringsAsFactors = FALSE) %>% filter(Comments != "") %>% count(Comments) %>% top_n(3, n) %>%
       pull(Comments)
   }
-  cat("found", length(comments), "comments\n")
+  log("found", length(comments), "comments\n")
   comments
 }
 
 set_marks <- function(id, question, mark, award, comments) {
   marks_db = read_marks()
+  log("set_marks for student ", id, " question ", question, "\n")
   row = which(marks_db$StudentID == id & marks_db$Question == question)
-  cat("Setting: mark=", mark, "\n")
+  log("set_marks row is ", row, "\n")
+  log("set_marks: mark=", mark, "\n")
   print(str(mark))
-  cat("Setting: award=", award, "\n")
+  log("set_marks: award=", award, "\n")
   if (is.null(award)) award = ""
-  print(str(award))
   if (is.null(comments)) comments = "" # empty
-  cat("Setting: comments=")
-  print(comments)
-  cat("\n")
-  cat("Setting: list(comments)=")
-  print(list(comments))
-  cat("\n")
+  log("set_marks: comments=")
+  log_list(list(comments))
   marks_db$Mark[row] = mark
   marks_db$Award[row] = award
   marks_db$Comments[row] = list(comments)
@@ -93,7 +96,9 @@ set_marks <- function(id, question, mark, award, comments) {
 
 set_comments <- function(id, question, comments) {
   marks_db = read_marks()
+  log("set_comments for student ", id, " question ", question, "\n")
   row = which(marks_db$StudentID == id & marks_db$Question == question)
+  log("set_comments row is ", row, "\n")
   if (is.null(comments)) comments = "" # empty
   marks_db$Comments[row] = list(comments)
   write_marks(marks_db)

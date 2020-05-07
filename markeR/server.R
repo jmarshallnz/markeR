@@ -3,6 +3,9 @@ library(shinyWidgets)
 library(dplyr)
 library(stringr)
 
+logfile <- "log.txt"
+log <- function(...) { cat(..., file=logfile, append=TRUE) }
+
 source("questions_csv.R")
 source("marks_csv.R")
 
@@ -27,13 +30,13 @@ shinyServer(function(input, output, session) {
   # load the data based one the URL?
   observe({
     query = parseQueryString(session$clientData$url_search)
-    cat("called into query observer\n")
+    log("called into query observer\n")
     if (is.null(marker$id) || !is.null(query[['m']]) && query[['m']] != marker$id) {
-      cat('marker id has changed\n')
+      log('marker id has changed\n')
       marker$id = query[['m']];
   
       if (!is.null(marker$id) && marker$id %in% markers) {
-        cat("Marker id = ", marker$id, "\n")
+        log("Marker id = ", marker$id, "\n")
         marker$order = read_marks() %>% filter(Marker == marker$id) %>% arrange(Order) %>% select(StudentID, Question)
   
         # setup all the info above
@@ -54,7 +57,7 @@ shinyServer(function(input, output, session) {
 
   # Current student
   observe({
-    cat("updating the pageHeader\n")
+    log("updating the pageHeader\n")
     header = paste(student$info$id, student$info$name, span(style="float:right;", layout$num_left))
     shinyjs::html("pageHeader", header)
   })
@@ -92,11 +95,11 @@ shinyServer(function(input, output, session) {
 
   # Comment buttons
   output$comments = renderUI({
-    cat("Updating comments\n")
-    cat("layout$comments = ", layout$comments, "\n")
-    cat("current$marks$comments = ", current$marks$comments, "\n")
+    log("Updating comments\n")
+    log("layout$comments = ", layout$comments, "\n")
+    log("current$marks$comments = ", current$marks$comments, "\n")
     comments = unique(c(layout$comments, current$marks$comments))
-    cat("comments = ", comments, "\n")
+    log("comments = ", comments, "\n")
     if (is.null(comments)) {
       comments = character(0)
     }
@@ -108,7 +111,7 @@ shinyServer(function(input, output, session) {
   # Add comment updater
   observeEvent(input$addcomment, {
     if (nchar(input$addcomment)) { #  nchar check, because emptying the text field results in "" choice.
-      cat("Adding a new comment\n")
+      log("Adding a new comment\n")
       # new comment - add to the database
       add_comment_to_question(current$question_name, input$addcomment)
       # and select that comment for the student
@@ -122,7 +125,7 @@ shinyServer(function(input, output, session) {
 
   # Update all comments whenever a single comment is added
   observe({
-    cat("all comments updated\n")
+    log("all comments updated\n")
     layout$all_comments
     choices = setdiff(layout$all_comments, layout$comments)
     updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
@@ -130,23 +133,23 @@ shinyServer(function(input, output, session) {
 
   # Marks buttons
   observe({
-    cat("Marks being updated\n")
+    log("Marks being updated\n")
     marks = layout$question$marks
     if (length(marks)) {
       by = layout$question$by
       selected = current$marks$mark
       if (length(selected) && is.na(selected)) selected = NULL
-      cat("selected = ", selected, "\n")
+      log("selected = ", selected, "\n")
       marks = seq(0, marks, by=by)
       choices = c("X", marks)
       updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
     }
   })
   observe({
-    cat("Award being updated\n")
-    cat("Current award = ", isolate(current$marks$award), "\n")
+    log("Award being updated\n")
+    log("Current award = ", isolate(current$marks$award), "\n")
     award = current$marks$award
-    cat("award = ", award, "\n")
+    log("award = ", award, "\n")
     updateCheckboxGroupButtons(session, "star", selected = award)
   })
   
@@ -165,14 +168,14 @@ shinyServer(function(input, output, session) {
     !is.na(diff) && diff
   }
   observeEvent(input$`next`, {
-    cat("Going NEXT\n")
+    log("Going NEXT\n")
     marks = list(marks = as.numeric(input$marks),
                  award = input$star,
                  comments = input$comments)
     diff = unlist(map2(current$marks, marks, changed))
-    print(diff)
+    log("diff=", diff, "\n")
     if (any(diff)) { # we don't care if there's only NAs
-      cat("Something has changed...\n")
+      log("Something has changed...\n")
       set_marks(id = student$info$id, question = current$question_name,
                 mark = input$marks, award = input$star, comments = input$comments)
     }
@@ -195,13 +198,13 @@ shinyServer(function(input, output, session) {
     }
   })
   observeEvent(input$next_unmarked, {
-    cat("Going NEXT unmarked\n")
+    log("Going NEXT unmarked\n")
     marks = list(marks = as.numeric(input$marks),
                  award = input$star,
                  comments = input$comments)
     diff = unlist(map2(current$marks, marks, changed))
     if (any(diff)) { # we don't care if there's only NAs
-      cat("Something has changed...\n")
+      log("Something has changed...\n")
       set_marks(id = student$info$id, question = current$question_name,
                 mark = input$marks, award = input$star, comments = input$comments)
     }
@@ -228,13 +231,14 @@ shinyServer(function(input, output, session) {
   })
   observeEvent(input$prev, {
     if (current$question > 1) {
-      cat("Going PREV\n")
+      log("Going PREV\n")
       marks = list(marks = as.numeric(input$marks),
                    award = input$star,
                    comments = input$comments)
       diff = unlist(map2(current$marks, marks, changed))
+      log("diff=", diff, "\n")
       if (any(diff)) { # we don't care if there's only NAs
-        cat("Something has changed...\n")
+        log("Something has changed...\n")
         set_marks(id = student$info$id, question = current$question_name,
                   mark = input$marks, award = input$star, comments = input$comments)
       }
