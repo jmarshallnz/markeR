@@ -99,7 +99,7 @@ shinyServer(function(input, output, session) {
 
   # Comment buttons
   output$comments = renderUI({
-    log("Updating comments\n")
+    log("Comments UI updating\n")
     log("layout$comments = ", layout$comments, "\n")
     log("current$marks$comments = ", current$marks$comments, "\n")
     comments = unique(c(layout$comments, current$marks$comments))
@@ -133,7 +133,7 @@ shinyServer(function(input, output, session) {
 
   # Update all comments whenever a single comment is added
   observe({
-    log("all comments updated\n")
+    log("all comments UI updated\n")
     layout$all_comments
     choices = setdiff(layout$all_comments, layout$comments)
     updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
@@ -141,7 +141,7 @@ shinyServer(function(input, output, session) {
 
   # Marks buttons
   observe({
-    log("Marks being updated\n")
+    log("Marks UI being updated\n")
     marks = layout$question$marks
     if (length(marks)) {
       by = layout$question$by
@@ -159,7 +159,7 @@ shinyServer(function(input, output, session) {
   })
 
   observe({
-    log("Award being updated\n")
+    log("Award UI updated\n")
     log("Current award = ", isolate(current$marks$award), "\n")
     award = current$marks$award
     log("award = ", award, "\n")
