@@ -55,6 +55,8 @@ shinyServer(function(input, output, session) {
         layout$comments = get_top_comments(marker$order$Question[1])
         layout$all_comments <- get_all_comments_for_question(marker$order$Question[1])
         layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
+
+        update_ui()
       }
     }
   })
@@ -97,29 +99,85 @@ shinyServer(function(input, output, session) {
   output$show_guide <- reactive({ return(if(layout$show_guide) 1 else 0) })
   outputOptions(output, "show_guide", suspendWhenHidden = FALSE)
 
-  # Comment buttons
-  output$comments = renderUI({
-    log("Comments UI updating\n")
-    log("layout$comments = ", layout$comments, "\n")
-    log("current$marks$comments = ", current$marks$comments, "\n")
-    comments = unique(c(layout$comments, current$marks$comments))
-    log("comments = ", comments, "\n")
-    if (is.null(comments)) {
-      comments = character(0)
-    }
-    selected = current$marks$comments
-    checkboxGroupButtons("comments", choices = comments, selected=selected, status='light',
-                      direction="vertical", individual=TRUE, width='350px')
-  })
-  observeEvent(input$comments, {
-    log("updating current comments from input\n")
-    current$marks$comments = input$comments
-  })
+  if (0) { # OLD SHIT
+    # Update all comments whenever a single comment is added
+    observe({
+      log("update_ui: all comments being set\n")
+      layout$all_comments
+      choices = setdiff(layout$all_comments, layout$comments)
+      updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
+    })
 
-  # Add comment updater
+    output$comments = renderUI({
+      log("update_ui: comments\n")
+      comments = unique(c(layout$comments, current$marks$comments))
+      if (is.null(comments)) {
+        comments = character(0)
+      }
+      selected = current$marks$comments
+      checkboxGroupButtons("comments", choices = comments, selected=selected, status='light',
+                           direction="vertical", individual=TRUE, width='350px')
+    })
+
+    observe({
+      log("Marks UI being updated\n")
+      marks = layout$question$marks
+      if (length(marks)) {
+        by = layout$question$by
+        selected = current$marks$mark
+        if (length(selected) && is.na(selected)) selected = NULL
+        log("selected = ", selected, "\n")
+        marks = seq(0, marks, by=by)
+        choices = c("X", marks)
+        updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
+      }
+    })
+
+    observe({
+      log("Award UI updated\n")
+      log("Current award = ", isolate(current$marks$award), "\n")
+      award = current$marks$award
+      log("award = ", award, "\n")
+      updateCheckboxGroupButtons(session, "star", selected = award)
+    })
+  }
+
+  update_ui <- function() {
+    log("update_ui: all comments being set\n")
+    layout$all_comments
+    choices = setdiff(layout$all_comments, layout$comments)
+    updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
+
+    log("update_ui: comments being set\n")
+    output$comments <<- renderUI({
+      comments = unique(c(layout$comments, current$marks$comments))
+      if (is.null(comments)) {
+        comments = character(0)
+      }
+      selected = current$marks$comments
+      checkboxGroupButtons("comments", choices = comments, selected=selected, status='light',
+                           direction="vertical", individual=TRUE, width='350px')
+    })
+
+    log("update_ui: marks set to ", current$marks$mark, "\n")
+    marks = layout$question$marks
+    if (length(marks)) {
+      by = layout$question$by
+      selected = current$marks$mark
+      if (length(selected) && is.na(selected)) selected = NULL
+      marks = seq(0, marks, by=by)
+      choices = c("X", marks)
+      updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
+    }
+
+    log("update_ui: star set to ", current$marks$award, "\n")
+    updateCheckboxGroupButtons(session, "star", selected = current$marks$award)
+  }
+
+  # Event observers
   observeEvent(input$addcomment, {
     if (nchar(input$addcomment)) { #  nchar check, because emptying the text field results in "" choice.
-      log("Adding a new comment\n")
+      log("input: add comment\n")
       # new comment - add to the database
       add_comment_to_question(current$question_name, input$addcomment)
       # and select that comment for the student
@@ -128,48 +186,30 @@ shinyServer(function(input, output, session) {
       # refresh the comment list from the database
       layout$comments <- get_top_comments(current$question_name)
       layout$all_comments <- get_all_comments_for_question(current$question_name)
+      
+      update_ui()
     }
   })
 
-  # Update all comments whenever a single comment is added
-  observe({
-    log("all comments UI updated\n")
-    layout$all_comments
-    choices = setdiff(layout$all_comments, layout$comments)
-    updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
-  })
+  observeEvent(input$comments, {
+    log("input: comments set\n")
+    current$marks$comments = input$comments
+    if (is.null(current$marks$comments)) current$marks$comments = character(0)
+  }, ignoreNULL = FALSE)
 
-  # Marks buttons
-  observe({
-    log("Marks UI being updated\n")
-    marks = layout$question$marks
-    if (length(marks)) {
-      by = layout$question$by
-      selected = current$marks$mark
-      if (length(selected) && is.na(selected)) selected = NULL
-      log("selected = ", selected, "\n")
-      marks = seq(0, marks, by=by)
-      choices = c("X", marks)
-      updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
-    }
-  })
   observeEvent(input$marks, {
-    log("updating current marks from input:", input$marks, " (current=", current$marks$mark,")\n")
+    req(input$marks)
+    log("input: marks set to ", input$marks, " (current=", current$marks$mark,")\n")
     current$marks$mark = input$marks
   })
 
-  observe({
-    log("Award UI updated\n")
-    log("Current award = ", isolate(current$marks$award), "\n")
-    award = current$marks$award
-    log("award = ", award, "\n")
-    updateCheckboxGroupButtons(session, "star", selected = award)
-  })
   observeEvent(input$star, {
-    log("updating current star from input:", input$star, " (current=", current$marks$award,")\n")
+    log("input: star set to ", input$star, " (current=", current$marks$award,")\n")
     current$marks$award = input$star
-  })
-  
+    if (is.null(current$marks$award) || is.na(current$marks$award))
+      current$marks$award = ""
+  }, ignoreNULL = FALSE)
+
   # Next/Prev buttons
   observe({
 #    shinyjs::toggleState("next", current$question < nrow(marker$order))
@@ -209,6 +249,8 @@ shinyServer(function(input, output, session) {
       # and update marks
       current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
+      
+      update_ui()
     }
   })
   observeEvent(input$next_unmarked, {
@@ -239,6 +281,7 @@ shinyServer(function(input, output, session) {
       if (!length(current$marks$mark) || is.na(current$marks$mark))
         done = TRUE
     }
+    update_ui()
   })
   observeEvent(input$prev, {
     if (current$question > 1) {
@@ -265,6 +308,8 @@ shinyServer(function(input, output, session) {
       # and update marks
       current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
+
+      update_ui()
     }
   })
 
