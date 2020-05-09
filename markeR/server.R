@@ -149,15 +149,13 @@ shinyServer(function(input, output, session) {
     updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
 
     log("update_ui: comments being set\n")
-    output$comments <<- renderUI({
-      comments = unique(c(layout$comments, current$marks$comments))
-      if (is.null(comments)) {
-        comments = character(0)
-      }
-      selected = current$marks$comments
-      checkboxGroupButtons("comments", choices = comments, selected=selected, status='light',
-                           direction="vertical", individual=TRUE, width='350px')
-    })
+    comments = unique(c(layout$comments, current$marks$comments))
+    if (is.null(comments)) {
+      comments = character(0)
+    }
+    selected = current$marks$comments
+    updateCheckboxGroupButtons(session, "comments", choices=comments,
+                               selected=selected, status='light')
 
     log("update_ui: marks set to ", current$marks$mark, "\n")
     marks = layout$question$marks
