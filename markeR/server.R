@@ -99,49 +99,6 @@ shinyServer(function(input, output, session) {
   output$show_guide <- reactive({ return(if(layout$show_guide) 1 else 0) })
   outputOptions(output, "show_guide", suspendWhenHidden = FALSE)
 
-  if (0) { # OLD SHIT
-    # Update all comments whenever a single comment is added
-    observe({
-      log("update_ui: all comments being set\n")
-      layout$all_comments
-      choices = setdiff(layout$all_comments, layout$comments)
-      updateSelectizeInput(session, "addcomment", selected = "", choices = choices, server = TRUE)
-    })
-
-    output$comments = renderUI({
-      log("update_ui: comments\n")
-      comments = unique(c(layout$comments, current$marks$comments))
-      if (is.null(comments)) {
-        comments = character(0)
-      }
-      selected = current$marks$comments
-      checkboxGroupButtons("comments", choices = comments, selected=selected, status='light',
-                           direction="vertical", individual=TRUE, width='350px')
-    })
-
-    observe({
-      log("Marks UI being updated\n")
-      marks = layout$question$marks
-      if (length(marks)) {
-        by = layout$question$by
-        selected = current$marks$mark
-        if (length(selected) && is.na(selected)) selected = NULL
-        log("selected = ", selected, "\n")
-        marks = seq(0, marks, by=by)
-        choices = c("X", marks)
-        updateRadioGroupButtons(session, "marks", choices = choices, selected=selected, status='marks')
-      }
-    })
-
-    observe({
-      log("Award UI updated\n")
-      log("Current award = ", isolate(current$marks$award), "\n")
-      award = current$marks$award
-      log("award = ", award, "\n")
-      updateCheckboxGroupButtons(session, "star", selected = award)
-    })
-  }
-
   update_ui <- function() {
     log("update_ui: all comments being set\n")
     layout$all_comments
