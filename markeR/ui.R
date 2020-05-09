@@ -26,9 +26,13 @@ dashboardPage(
                          status="star"),id="markgroup"),
     tags$hr(),
     div(id = "pagebuttons", style="width:340px",
-      actionButton("prev", "Prev", width='20%', style="display:inline-block;", class="btn-page"),
-      actionButton("next", "Next", width='20%', style="display:inline-block;", class="btn-page"),
-      actionButton("next_unmarked", "Unmarked", width='30%', style="display:inline-block; float:right", class="btn-page"))
+      actionButton("reset", "Reset", width='20%', style="display:inline-block;", class="btn-red"),
+      actionButton("save", "Save", width='18%', style="display:inline-block", class="btn-green"),
+      actionButton("savenext", "Save and Next", width='43%', style="display:inline-block; float:right", class="btn-green"),
+      actionButton("prev", "<", width='10%', style="display:inline-block;", class="btn-page"),
+      actionButton("next", ">", width='10%', style="display:inline-block;", class="btn-page"),
+      actionButton("next_unmarked", "Unmarked", width='30%', style="display:inline-block; float:right", class="btn-page")
+      )
   ),
   dashboardBody(
     useShinyjs(),

@@ -49,11 +49,59 @@ section.content {
   bottom: 0;
 }
 
-.btn-page {
-  background-color: #3c8dbc;
+.btn-red {
+  background-color: #E55A75;
   color: #ffffff;
   font-size: 16pt;
   padding: 5px;
+  margin: 2px;
+  display:inline-block
+}
+
+.btn-red:hover {
+  background-color: #E5395B;
+  color: #ffffff;
+}
+
+.btn-red:hover[disabled] {
+  background-color: #E5395B;
+  color: #ffffff;
+}
+
+.btn-red:focus {
+  background-color: #E5395B;
+  color: #ffffff;
+}
+
+.btn-green {
+  background-color: #50AC3C;
+  color: #ffffff;
+  font-size: 16pt;
+  padding: 5px;
+  margin: 2px;
+  display:inline-block
+}
+
+.btn-green:hover {
+  background-color: #48CD2A;
+  color: #ffffff;
+}
+
+.btn-green:hover[disabled] {
+  background-color: #48CD2A;
+  color: #ffffff;
+}
+
+.btn-green:focus {
+  background-color: #48CD2A;
+  color: #ffffff;
+}
+
+.btn-page {
+  background-color: #3c8dbc;
+  color: #ffffff;
+  font-size: 12pt;
+  padding: 3px;
   margin: 2px;
   display:inline-block
 }

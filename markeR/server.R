@@ -170,6 +170,7 @@ shinyServer(function(input, output, session) {
 #    shinyjs::toggleState("next", current$question < nrow(marker$order))
     shinyjs::toggleState("prev", current$question > 1)
   })
+
   changed <- function(old, new) {
     if (is.null(new) && length(old) == 1 && nchar(old) == 0) return(FALSE) # NULL and empty are equivalent
     if (length(new) != length(old)) return(TRUE) # length has changed
@@ -179,8 +180,25 @@ shinyServer(function(input, output, session) {
     # if there's a difference in value, diff will be TRUE. If there's not it'll be FALSE or NA
     !is.na(diff) && diff
   }
-  observeEvent(input$`next`, {
-    log("Going NEXT\n")
+
+  if (0) {
+  observe({
+    different = any(unlist(map2(current$db_marks, current$marks, changed)))
+    shinyjs::toggleState("reset", different)
+    shinyjs::toggleState("save", different)
+    shinyjs::toggleState("savenext", different)
+  })
+  }
+
+  observeEvent(input$reset, {
+    log("reset\n")
+    current$marks = NA; # force reset
+    current$marks = current$db_marks
+    update_ui()
+  })
+
+  on_save <- function() {
+    log("save\n")
     diff = unlist(map2(current$db_marks, current$marks, changed))
     log("diff=", diff, "\n")
     if (any(diff)) { # we don't care if there's only NAs
@@ -188,13 +206,26 @@ shinyServer(function(input, output, session) {
       set_marks(id = student$info$id, question = current$question_name,
                 mark = input$marks, award = input$star, comments = input$comments)
     }
+    return(any(diff))
+  }
 
+  observeEvent(input$save, {
+    if (on_save()) {
+      current$db_marks = NA
+      current$db_marks = current$marks
+      update_ui()
+    }
+  })
+
+  observeEvent(input$savenext, {
+    log("save and next\n")
+    on_save()
     if (current$question < nrow(marker$order)) {
       # increment the question and/or student
       current$question = current$question + 1
       current$question_name = marker$order$Question[current$question]
       student$info = get_student_details(marker$order$StudentID[current$question])
-      
+
       # read in the new layout
       layout$question = read_question_layout(current$question_name)
       layout$comments = get_top_comments(current$question_name)
@@ -204,19 +235,35 @@ shinyServer(function(input, output, session) {
       # and update marks
       current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
       current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
-      
+
+      update_ui()
+    }
+  })
+
+  observeEvent(input$`next`, {
+    log("Going NEXT\n")
+    if (current$question < nrow(marker$order)) {
+      # increment the question and/or student
+      current$question = current$question + 1
+      current$question_name = marker$order$Question[current$question]
+      student$info = get_student_details(marker$order$StudentID[current$question])
+
+      # read in the new layout
+      layout$question = read_question_layout(current$question_name)
+      layout$comments = get_top_comments(current$question_name)
+      layout$all_comments = get_all_comments_for_question(current$question_name)
+      layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
+
+      # and update marks
+      current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
+      current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
+
       update_ui()
     }
   })
   observeEvent(input$next_unmarked, {
     log("Going NEXT unmarked\n")
-    diff = unlist(map2(current$db_marks, current$marks, changed))
-    if (any(diff)) { # we don't care if there's only NAs
-      log("Something has changed...\n")
-      set_marks(id = student$info$id, question = current$question_name,
-                mark = input$marks, award = input$star, comments = input$comments)
-    }
-    
+
     done <- FALSE
     while (!done && current$question < nrow(marker$order)) {
       # increment the question and/or student
@@ -239,15 +286,8 @@ shinyServer(function(input, output, session) {
     update_ui()
   })
   observeEvent(input$prev, {
+    log("Going PREV\n")
     if (current$question > 1) {
-      log("Going PREV\n")
-      diff = unlist(map2(current$db_marks, current$marks, changed))
-      log("diff=", diff, "\n")
-      if (any(diff)) { # we don't care if there's only NAs
-        log("Something has changed...\n")
-        set_marks(id = student$info$id, question = current$question_name,
-                  mark = input$marks, award = input$star, comments = input$comments)
-      }
 
       # decrement the question
       current$question = current$question - 1
