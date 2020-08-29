@@ -41,8 +41,10 @@ read_marks <- function(filename = NULL) {
   }
 }
 
-get_student_details <- function(id) {
-  read_marks() %>% filter(StudentID == id) %>% select(id = StudentID, name = StudentName, pdf_url = PDFurl) %>% unique() %>% as.list()
+get_student_details <- function(id, question) {
+  read_marks() %>% filter(StudentID == id,
+                          Question == question) %>%
+    select(id = StudentID, name = StudentName, pdf_url = PDFurl) %>% unique() %>% as.list()
 }
 
 get_marks <- function(id, question) {

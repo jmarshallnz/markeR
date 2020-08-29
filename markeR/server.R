@@ -44,7 +44,8 @@ shinyServer(function(input, output, session) {
         marker$order = read_marks() %>% filter(Marker == marker$id) %>% arrange(Order) %>% select(StudentID, Question)
   
         # setup all the info above
-        student$info = get_student_details(marker$order$StudentID[1])
+        student$info = get_student_details(marker$order$StudentID[1],
+                                           marker$order$Question[1])
     
         current$question = 1
         current$question_name = marker$order$Question[1]
@@ -224,7 +225,8 @@ shinyServer(function(input, output, session) {
       # increment the question and/or student
       current$question = current$question + 1
       current$question_name = marker$order$Question[current$question]
-      student$info = get_student_details(marker$order$StudentID[current$question])
+      student$info = get_student_details(marker$order$StudentID[current$question],
+                                         marker$order$Question[current$question])
 
       # read in the new layout
       layout$question = read_question_layout(current$question_name)
@@ -246,7 +248,8 @@ shinyServer(function(input, output, session) {
       # increment the question and/or student
       current$question = current$question + 1
       current$question_name = marker$order$Question[current$question]
-      student$info = get_student_details(marker$order$StudentID[current$question])
+      student$info = get_student_details(marker$order$StudentID[current$question],
+                                         marker$order$Question[current$question])
 
       # read in the new layout
       layout$question = read_question_layout(current$question_name)
@@ -269,7 +272,8 @@ shinyServer(function(input, output, session) {
       # increment the question and/or student
       current$question = current$question + 1
       current$question_name = marker$order$Question[current$question]
-      student$info = get_student_details(marker$order$StudentID[current$question])
+      student$info = get_student_details(marker$order$StudentID[current$question],
+                                         marker$order$Question[current$question])
 
       # read in the new layout
       layout$question = read_question_layout(current$question_name)
@@ -292,7 +296,8 @@ shinyServer(function(input, output, session) {
       # decrement the question
       current$question = current$question - 1
       current$question_name = marker$order$Question[current$question]
-      student$info = get_student_details(marker$order$StudentID[current$question])
+      student$info = get_student_details(marker$order$StudentID[current$question],
+                                         marker$order$Question[current$question])
 
       # read in the new layout
       layout$question = read_question_layout(current$question_name)
