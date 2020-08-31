@@ -41,7 +41,8 @@ shinyServer(function(input, output, session) {
   
       if (!is.null(marker$id) && marker$id %in% markers) {
         log("Marker id = ", marker$id, "\n")
-        marker$order = read_marks() %>% filter(Marker == marker$id) %>% arrange(Order) %>% select(StudentID, Question)
+        marker$order = read_marks() %>% filter(Marker == marker$id) %>% 
+          filter(!is.na(PDFurl)) %>% arrange(Order) %>% select(StudentID, Question)
   
         # setup all the info above
         student$info = get_student_details(marker$order$StudentID[1],
