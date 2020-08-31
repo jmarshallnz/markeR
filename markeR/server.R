@@ -120,7 +120,7 @@ shinyServer(function(input, output, session) {
     marks = layout$question$marks
     if (length(marks)) {
       by = layout$question$by
-      selected = current$marks$mark
+      selected = as.character(current$marks$mark)
       if (length(selected) && is.na(selected)) selected = NULL
       marks = seq(0, marks, by=by)
       choices = c("X", marks)
