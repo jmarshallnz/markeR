@@ -37,17 +37,21 @@ create_feedback <- function(marks, out_dir, clean=TRUE) {
                     output_dir = student_outdir, envir=student.envir, clean=clean)
 }
 
-feedback <- function(our_dir) {
+feedback <- function(out_dir) {
   # read in the marks
   marks = read_marks() %>% left_join(read_questions() %>% select(-Comments, Total=Marks)) %>%
+    mutate(Question = as.character(Question)) %>%
     tidyr::extract(Question, into=c("Exercise", "Question"), regex="([0-9]+).([0-9]+)", remove=TRUE, convert=TRUE) %>%
     mutate(Question = as.character(Question)) %>%
     # HACK
     mutate(Mark = as.numeric(Mark))
   # HACK
-  marks %>% split(.$StudentID) %>% lapply(create_feedback, out_dir = our_dir)
+  marks %>% split(.$StudentID) %>% lapply(create_feedback, out_dir = out_dir)
 }
 
 # dump marks out to spreadsheet
-#read_marks(here::here("markeR/marks.csv")) %>% group_by(StudentID, StudentName) %>% mutate(Mark = as.numeric(Mark)) %>% summarise(Mark = sum(Mark)) %>% write_csv("227215_ass1.csv")
+if (0) {
+  read_marks(here::here("markeR/marks.csv")) %>% group_by(StudentID, StudentName) %>% mutate(Mark = as.numeric(Mark)) %>% summarise(Mark = sum(Mark)) %>%
+    write_csv("stream_marks.csv")
+}
 
