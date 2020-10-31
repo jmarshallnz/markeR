@@ -30,34 +30,51 @@ read_questions <- function(filename=NULL) {
   }
 }
 
-read_question_layout <- function(question) {
-  read_questions() %>%
+question_file <- function(paper) {
+  if (!is.null(paper)) {
+    file <- file.path('data', paste0(paper, '_questions.csv'))
+  } else {
+    file <- "questions.csv"
+  }
+  file
+}
+
+read_questions_for_paper <- function(paper) {
+  read_questions(question_file(paper))
+}
+
+write_questions_for_paper <- function(questions, paper) {
+  write_csv(questions %>% flatten_listcol(Comments), question_file(paper))
+}
+
+read_question_layout <- function(question, paper) {
+  read_questions_for_paper(paper) %>%
     filter(Question == question) %>%
     select(marks=Marks, guide=Guide, by=By) %>%
     as.list()
 }
 
 # TODO: This isn't actually needed - just being used to test Next/Prev buttons...
-max_question <- function() {
-  read_questions() %>% pull(Question) %>% max()
+max_question <- function(paper) {
+  read_questions_for_paper(paper) %>% pull(Question) %>% max()
 }
 
-get_all_comments_for_question <- function(question) {
-  read_questions() %>%
+get_all_comments_for_question <- function(question, paper) {
+  read_questions_for_paper(paper) %>%
     filter(Question == question) %>%
     pull(Comments) %>%
     unlist()
 }
 
-get_all_comments <- function() {
-  read_questions() %>% pull(Comments) %>%
+get_all_comments <- function(paper) {
+  read_questions_for_paper(paper) %>% pull(Comments) %>%
     unlist() %>%
     unique()
 }
 
-add_comment_to_question <- function(question, comment) {
-  question_db = read_questions()
+add_comment_to_question <- function(question, comment, paper) {
+  question_db = read_questions_for_paper(paper)
   comments = question_db %>% filter(Question == question) %>% pull(Comments) %>% unlist() %>% c(comment)
   question_db$Comments[question_db$Question == question] <- list(comments)
-  write_csv(question_db %>% flatten_listcol(Comments), "questions.csv")
+  write_questions_for_paper(question_db, paper)
 }

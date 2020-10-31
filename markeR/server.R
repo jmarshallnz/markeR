@@ -13,9 +13,11 @@ markers <- read_marks() %>% pull(Marker) %>% unique()
 
 shinyServer(function(input, output, session) {
 
-  marker = reactiveValues(id = "",
-                          order = data.frame(StudentID = NULL, Question = NULL))
-  
+  paper <- reactiveValues(id = NULL)
+
+  marker <- reactiveValues(id = "",
+                           order = data.frame(StudentID = NULL, Question = NULL))
+
   # Where we are at currently. Will have marker_id in future
   student <- reactiveValues(info = NULL) #get_student_details(marker$order$StudentID[1]))
 
@@ -41,21 +43,22 @@ shinyServer(function(input, output, session) {
   
       if (!is.null(marker$id) && marker$id %in% markers) {
         log("Marker id = ", marker$id, "\n")
-        marker$order = read_marks() %>% filter(Marker == marker$id) %>% 
+        marker$order = read_marks_for_paper(paper$id) %>% filter(Marker == marker$id) %>% 
           filter(!is.na(PDFurl)) %>% arrange(Order) %>% select(StudentID, Question)
   
         # setup all the info above
         student$info = get_student_details(marker$order$StudentID[1],
-                                           marker$order$Question[1])
+                                           marker$order$Question[1],
+                                           paper$id)
     
         current$question = 1
         current$question_name = marker$order$Question[1]
-        current$marks = current$db_marks = get_marks(marker$order$StudentID[1], marker$order$Question[1])
+        current$marks = current$db_marks = get_marks(marker$order$StudentID[1], marker$order$Question[1], paper$id)
   
         layout$show_guide = TRUE
-        layout$question = read_question_layout(marker$order$Question[1])
-        layout$comments = get_top_comments(marker$order$Question[1])
-        layout$all_comments <- get_all_comments_for_question(marker$order$Question[1])
+        layout$question = read_question_layout(marker$order$Question[1], paper$id)
+        layout$comments = get_top_comments(marker$order$Question[1], paper$id)
+        layout$all_comments <- get_all_comments_for_question(marker$order$Question[1], paper$id)
         layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
 
         update_ui()
@@ -136,13 +139,14 @@ shinyServer(function(input, output, session) {
     if (nchar(input$addcomment)) { #  nchar check, because emptying the text field results in "" choice.
       log("input: add comment\n")
       # new comment - add to the database
-      add_comment_to_question(current$question_name, input$addcomment)
+      add_comment_to_question(current$question_name, input$addcomment, paper=paper$id)
       # and select that comment for the student
       current$marks$comments = c(input$comments, input$addcomment)
-      set_comments(id = student$info$id, question = current$question_name, comments = current$marks$comments)
+      set_comments(id = student$info$id, question = current$question_name, comments = current$marks$comments,
+                   paper = paper$id)
       # refresh the comment list from the database
-      layout$comments <- get_top_comments(current$question_name)
-      layout$all_comments <- get_all_comments_for_question(current$question_name)
+      layout$comments <- get_top_comments(current$question_name, paper=paper$id)
+      layout$all_comments <- get_all_comments_for_question(current$question_name, paper=paper$id)
       
       update_ui()
     }
@@ -206,7 +210,8 @@ shinyServer(function(input, output, session) {
     if (any(diff)) { # we don't care if there's only NAs
       log("Something has changed...\n")
       set_marks(id = student$info$id, question = current$question_name,
-                mark = input$marks, award = input$star, comments = input$comments)
+                mark = input$marks, award = input$star, comments = input$comments,
+                paper = paper$id)
     }
     return(any(diff))
   }
@@ -227,17 +232,18 @@ shinyServer(function(input, output, session) {
       current$question = current$question + 1
       current$question_name = marker$order$Question[current$question]
       student$info = get_student_details(marker$order$StudentID[current$question],
-                                         marker$order$Question[current$question])
+                                         marker$order$Question[current$question],
+                                         paper = paper$id)
 
       # read in the new layout
-      layout$question = read_question_layout(current$question_name)
-      layout$comments = get_top_comments(current$question_name)
-      layout$all_comments = get_all_comments_for_question(current$question_name)
+      layout$question = read_question_layout(current$question_name, paper = paper$id)
+      layout$comments = get_top_comments(current$question_name, paper = paper$id)
+      layout$all_comments = get_all_comments_for_question(current$question_name, paper = paper$id)
       layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
 
       # and update marks
       current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
-      current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
+      current$marks = current$db_marks = get_marks(student$info$id, current$question_name, paper = paper$id)
 
       update_ui()
     }
@@ -250,17 +256,18 @@ shinyServer(function(input, output, session) {
       current$question = current$question + 1
       current$question_name = marker$order$Question[current$question]
       student$info = get_student_details(marker$order$StudentID[current$question],
-                                         marker$order$Question[current$question])
+                                         marker$order$Question[current$question],
+                                         paper = paper$id)
 
       # read in the new layout
-      layout$question = read_question_layout(current$question_name)
-      layout$comments = get_top_comments(current$question_name)
-      layout$all_comments = get_all_comments_for_question(current$question_name)
+      layout$question = read_question_layout(current$question_name, paper = paper$id)
+      layout$comments = get_top_comments(current$question_name, paper = paper$id)
+      layout$all_comments = get_all_comments_for_question(current$question_name, paper = paper$id)
       layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
 
       # and update marks
       current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
-      current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
+      current$marks = current$db_marks = get_marks(student$info$id, current$question_name, paper = paper$id)
 
       update_ui()
     }
@@ -274,17 +281,18 @@ shinyServer(function(input, output, session) {
       current$question = current$question + 1
       current$question_name = marker$order$Question[current$question]
       student$info = get_student_details(marker$order$StudentID[current$question],
-                                         marker$order$Question[current$question])
+                                         marker$order$Question[current$question],
+                                         paper = paper$id)
 
       # read in the new layout
-      layout$question = read_question_layout(current$question_name)
-      layout$comments = get_top_comments(current$question_name)
-      layout$all_comments = get_all_comments_for_question(current$question_name)
+      layout$question = read_question_layout(current$question_name, paper = paper$id)
+      layout$comments = get_top_comments(current$question_name, paper = paper$id)
+      layout$all_comments = get_all_comments_for_question(current$question_name, paper = paper$id)
       layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
       
       # and update marks
       current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
-      current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
+      current$marks = current$db_marks = get_marks(student$info$id, current$question_name, paper = paper$id)
       if (!length(current$marks$mark) || is.na(current$marks$mark))
         done = TRUE
     }
@@ -298,17 +306,18 @@ shinyServer(function(input, output, session) {
       current$question = current$question - 1
       current$question_name = marker$order$Question[current$question]
       student$info = get_student_details(marker$order$StudentID[current$question],
-                                         marker$order$Question[current$question])
+                                         marker$order$Question[current$question],
+                                         paper = paper$id)
 
       # read in the new layout
-      layout$question = read_question_layout(current$question_name)
-      layout$comments = get_top_comments(current$question_name)
-      layout$all_comments = get_all_comments_for_question(current$question_name)
+      layout$question = read_question_layout(current$question_name, paper = paper$id)
+      layout$comments = get_top_comments(current$question_name, paper = paper$id)
+      layout$all_comments = get_all_comments_for_question(current$question_name, paper = paper$id)
       layout$num_left = marker$order %>% slice(current$question:n()) %>% filter(Question == current$question_name) %>% nrow()
 
       # and update marks
       current$marks = current$db_marks = NA; # force it to flag as update - apparently it can't otherwise detect the changes in the list...
-      current$marks = current$db_marks = get_marks(student$info$id, current$question_name)
+      current$marks = current$db_marks = get_marks(student$info$id, current$question_name, paper = paper$id)
 
       update_ui()
     }

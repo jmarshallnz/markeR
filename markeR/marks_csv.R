@@ -41,15 +41,39 @@ read_marks <- function(filename = NULL) {
   }
 }
 
-get_student_details <- function(id, question) {
-  read_marks() %>% filter(StudentID == id,
-                          Question == question) %>%
+write_marks <- function(marks_db, filename = NULL) {
+  if (is.null(filename))
+    filename = "marks.csv"
+  write_csv(marks_db %>% flatten_listcol(Comments), filename)
+}
+
+marks_file <- function(paper) {
+  if (!is.null(paper)) {
+    file <- file.path('data', paste0(paper, '_marks.csv'))
+  } else {
+    file <- "marks.csv"
+  }
+  file
+}
+
+read_marks_for_paper <- function(paper) {
+  read_marks(marks_file(paper))
+}
+
+write_marks_for_paper <- function(marks, paper) {
+  write_marks(marks, marks_file(paper))
+}
+
+get_student_details <- function(id, question, paper) {
+  read_marks_for_paper(paper) %>%
+    filter(StudentID == id, Question == question) %>%
     select(id = StudentID, name = StudentName, pdf_url = PDFurl) %>% unique() %>% as.list()
 }
 
-get_marks <- function(id, question) {
+get_marks <- function(id, question, paper) {
   log("get_marks for student ", id, " question ", question, "\n")
-  marks = read_marks() %>% filter(StudentID == id, Question == question) %>%
+  marks = read_marks_for_paper(paper) %>%
+    filter(StudentID == id, Question == question) %>%
     select(mark = Mark, award = Award, comments = Comments) %>%
     as.list
   marks$comments = unlist(marks$comments)
@@ -66,9 +90,10 @@ get_marks <- function(id, question) {
   marks
 }
 
-get_top_comments <- function(question, n=3) {
+get_top_comments <- function(question, paper, n=3) {
   log("Calling get_top_comments()\n")
-  comments = read_marks() %>% filter(Question == question) %>%
+  comments = read_marks_for_paper(paper) %>%
+    filter(Question == question) %>%
     pull(Comments) %>% unlist()
   if (length(comments) > 0) {
     comments = data.frame(Comments = comments, stringsAsFactors = FALSE) %>% filter(Comments != "") %>% count(Comments) %>% top_n(3, n) %>%
@@ -78,8 +103,8 @@ get_top_comments <- function(question, n=3) {
   comments
 }
 
-set_marks <- function(id, question, mark, award, comments) {
-  marks_db = read_marks()
+set_marks <- function(id, question, mark, award, comments, paper) {
+  marks_db = read_marks_for_paper(paper)
   log("set_marks for student ", id, " question ", question, "\n")
   row = which(marks_db$StudentID == id & marks_db$Question == question)
   log("set_marks row is ", row, "\n")
@@ -93,21 +118,15 @@ set_marks <- function(id, question, mark, award, comments) {
   marks_db$Mark[row] = mark
   marks_db$Award[row] = award
   marks_db$Comments[row] = list(comments)
-  write_marks(marks_db)
+  write_marks_for_paper(marks_db, paper)
 }
 
-set_comments <- function(id, question, comments) {
-  marks_db = read_marks()
+set_comments <- function(id, question, comments, paper) {
+  marks_db = read_marks_for_paper(paper)
   log("set_comments for student ", id, " question ", question, "\n")
   row = which(marks_db$StudentID == id & marks_db$Question == question)
   log("set_comments row is ", row, "\n")
   if (is.null(comments)) comments = "" # empty
   marks_db$Comments[row] = list(comments)
-  write_marks(marks_db)
-}
-
-write_marks <- function(marks_db, filename = NULL) {
-  if (is.null(filename))
-    filename = "marks.csv"
-  write_csv(marks_db %>% flatten_listcol(Comments), filename)
+  write_marks_for_paper(marks_db, paper)
 }
