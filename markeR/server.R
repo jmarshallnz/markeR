@@ -36,6 +36,14 @@ shinyServer(function(input, output, session) {
   observe({
     query = parseQueryString(session$clientData$url_search)
     log("called into query observer\n")
+    if (!is.null(query[['p']]) && (is.null(paper$id) || query[['p']] != paper$id)) {
+      paper$id = query[['p']];
+      paper$markers = read_marks_for_paper(paper$id) %>% pull(Marker) %>% unique()
+      marker$id = NULL; # force change in marker below.
+      log('paper id has changed to:', paper$id, '\n')
+      log('paper markers are:', paste(paper$markers, collapse=','), '\n')
+      log("marker id has been set to NULL\n")
+    }
     if (is.null(marker$id) || !is.null(query[['m']]) && query[['m']] != marker$id) {
       log('marker id has changed\n')
       marker$id = query[['m']];
