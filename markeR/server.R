@@ -9,11 +9,10 @@ log <- function(...) { cat(..., file=logfile, append=TRUE) }
 source("questions_csv.R")
 source("marks_csv.R")
 
-markers <- read_marks() %>% pull(Marker) %>% unique()
-
 shinyServer(function(input, output, session) {
 
-  paper <- reactiveValues(id = NULL)
+  paper <- reactiveValues(id = NULL,
+                          markers = read_marks_for_paper(NULL) %>% pull(Marker) %>% unique())
 
   marker <- reactiveValues(id = "",
                            order = data.frame(StudentID = NULL, Question = NULL))
@@ -41,7 +40,7 @@ shinyServer(function(input, output, session) {
       log('marker id has changed\n')
       marker$id = query[['m']];
   
-      if (!is.null(marker$id) && marker$id %in% markers) {
+      if (!is.null(marker$id) && marker$id %in% paper$markers) {
         log("Marker id = ", marker$id, "\n")
         marker$order = read_marks_for_paper(paper$id) %>% filter(Marker == marker$id) %>% 
           filter(!is.na(PDFurl)) %>% arrange(Order) %>% select(StudentID, Question)
