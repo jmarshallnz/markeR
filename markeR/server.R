@@ -45,14 +45,13 @@ shinyServer(function(input, output, session) {
       log("marker id has been set to NULL\n")
     }
     if (is.null(marker$id) || !is.null(query[['m']]) && query[['m']] != marker$id) {
-      log('marker id has changed\n')
       marker$id = query[['m']];
-  
+      log('marker id has changed to:', marker$id, '\n')
+
       if (!is.null(marker$id) && marker$id %in% paper$markers) {
-        log("Marker id = ", marker$id, "\n")
         marker$order = read_marks_for_paper(paper$id) %>% filter(Marker == marker$id) %>% 
           filter(!is.na(PDFurl)) %>% arrange(Order) %>% select(StudentID, Question)
-  
+
         # setup all the info above
         student$info = get_student_details(marker$order$StudentID[1],
                                            marker$order$Question[1],
