@@ -32,7 +32,7 @@ read_questions <- function(filename=NULL) {
 
 question_file <- function(paper) {
   if (!is.null(paper)) {
-    file <- file.path('data', paste0(paper, '_questions.csv'))
+    file <- file.path('data', paper, 'questions.csv')
   } else {
     file <- "questions.csv"
   }

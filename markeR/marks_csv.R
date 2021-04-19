@@ -49,7 +49,7 @@ write_marks <- function(marks_db, filename = NULL) {
 
 marks_file <- function(paper) {
   if (!is.null(paper)) {
-    file <- file.path('data', paste0(paper, '_marks.csv'))
+    file <- file.path('data', paper, 'marks.csv')
   } else {
     file <- "marks.csv"
   }
