@@ -9,6 +9,17 @@ log <- function(...) { cat(..., file=logfile, append=TRUE) }
 source("questions_csv.R")
 source("marks_csv.R")
 
+check_hash_for_paper <- function(paper, hash) {
+  # read the hash file
+  if (is.null(paper) || is.null(hash))
+    return(FALSE)
+  hash_file <- file.path('data', paper, 'hash')
+  if (!file.exists(hash_file))
+    return(FALSE)
+  server_hash <- scan(hash_file, what=character())
+  return(hash == server_hash)
+}
+
 shinyServer(function(input, output, session) {
 
   paper <- reactiveValues(id = NULL,
@@ -38,11 +49,18 @@ shinyServer(function(input, output, session) {
     log("called into query observer\n")
     if (!is.null(query[['p']]) && (is.null(paper$id) || query[['p']] != paper$id)) {
       paper$id = query[['p']];
-      paper$markers = read_marks_for_paper(paper$id) %>% pull(Marker) %>% unique()
-      marker$id = NULL; # force change in marker below.
-      log('paper id has changed to:', paper$id, '\n')
-      log('paper markers are:', paste(paper$markers, collapse=','), '\n')
-      log("marker id has been set to NULL\n")
+      hash = query[['h']];
+      if (check_hash_for_paper(paper$id, hash)) {
+        paper$markers = read_marks_for_paper(paper$id) %>% pull(Marker) %>% unique()
+        marker$id = NULL; # force change in marker below.
+        log('paper id has changed to:', paper$id, '\n')
+        log('paper markers are:', paste(paper$markers, collapse=','), '\n')
+        log("marker id has been set to NULL\n")
+      } else {
+        log('hash for paper id:' ,paper$id, 'is wrong\n')
+        paper$markers = NULL
+        marker$id = NULL; # force change in marker below.
+      }
     }
     if (is.null(marker$id) || !is.null(query[['m']]) && query[['m']] != marker$id) {
       marker$id = query[['m']];
