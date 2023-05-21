@@ -96,7 +96,7 @@ get_top_comments <- function(question, paper, n=3) {
     filter(Question == question) %>%
     pull(Comments) %>% unlist()
   if (length(comments) > 0) {
-    comments = data.frame(Comments = comments, stringsAsFactors = FALSE) %>% filter(Comments != "") %>% count(Comments) %>% top_n(3, n) %>%
+    comments = data.frame(Comments = comments, stringsAsFactors = FALSE) %>% filter(Comments != "") %>% count(Comments) %>% slice_max(5, n, with_ties=FALSE) %>%
       pull(Comments)
   }
   log("found", length(comments), "comments\n")
