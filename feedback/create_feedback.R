@@ -9,21 +9,40 @@ collapse <- function(comments) {
   comments
 }
 
+fill_empty_comments <- function(comments, mark, total) {
+  good_job <- sample(c("Nice work!", "Good work!", "Great!", "Nice job!"),
+                     size=length(comments), replace=TRUE)
+  case_when(comments == "" & mark == total ~ good_job,
+            comments == "" & mark == 0 ~ "See solutions",
+            TRUE ~ comments)
+}
+
 create_mark <- function(Mark, Total, Award) {
-  mark_fraction = paste(Mark, Total, sep="/")
-  ifelse(!is.na(Award) & Award == "star", paste(mark_fraction, "\\includegraphics[width=0.5cm]{star.png}"), mark_fraction)
+  if (sum(Total) > 0) {
+    mark_fraction = paste0(paste(Mark, Total, sep="/"), " ")
+  } else {
+    mark_fraction = ""
+  }
+  ifelse(!is.na(Award) & Award == "star", paste0(mark_fraction, "\\includegraphics[width=0.5cm]{star.png}"), mark_fraction)
 }
 
 create_feedback <- function(marks, out_dir, clean=TRUE) {
   student = marks %>% filter(!is.na(PDFurl)) %>% select(StudentID, StudentName, PDFurl) %>% slice_head(n=1) %>% as.list()
-  questions = marks %>% select(Exercise, Question, Mark, Total, Award, Comments) %>% mutate(Comments = collapse(Comments)) %>%
+  questions = marks %>% select(Exercise, Question, Mark, Total, Award, Comments) %>%
+    mutate(Comments = collapse(Comments)) %>%
+    mutate(Comments = fill_empty_comments(Comments, Mark, Total)) %>%
     split(.$Exercise)
   # add total row
   tab_data <- lapply(questions, 
                      function(x) {
-                       bind_rows(x, tibble(Question = "Total", Mark = sum(x$Mark), Total = sum(x$Total), Comments = "")) %>%
-                         mutate(Mark = create_mark(Mark, Total, Award)) %>% select(Question, Mark, Comments)
+                       if (sum(x$Total) > 0) {
+                         tab <- bind_rows(x, tibble(Question = "Total", Mark = sum(x$Mark), Total = sum(x$Total), Comments = ""))
+                       } else {
+                         tab <- x
+                       }
+                       tab %>% mutate(Mark = create_mark(Mark, Total, Award)) %>% select(Question, Mark, Comments)
                      })
+  print(tab_data)
   total = marks %>% select(Mark, Total) %>% summarise(Mark = sum(Mark), Total = sum(Total)) %>% as.list()
   # create environment
   student.envir = new.env()
@@ -77,22 +96,66 @@ if (0) {
     write_csv(here::here("feedback/193301_2020/questions.csv"))
 }
 if (0) {
+  if (0) {
+    read_csv('feedback/2024_233214_week11/marks.csv') |>
+      mutate(Question = as.numeric(paste0('1.', Question))) |>
+      write_csv('feedback/2024_233214_week11/marks.csv')
+    read_csv('feedback/2024_233214_week11/questions.csv') |>
+      mutate(Question = as.numeric(paste0('1.', Question))) |>
+      write_csv('feedback/2024_233214_week11/questions.csv')
+  }
   old_dir <- setwd("feedback")
-  feedback("227212_2021", "227212_2021")
+  feedback("2024_233214_week12", "2024_233214_week12")
   setwd(old_dir)
-  old_dir <- setwd("feedback/227212_2021/227212_2021")
+  old_dir <- setwd("feedback/2024_233214_week12/2024_233214_week12")
   zip("upload.zip", ".")
   file_move("upload.zip", "..")
   setwd(old_dir)
 }
+
 # dump marks out to spreadsheet
+get_feedback_ids <- function(file) {
+  feedback_files <- list.files(file)
+  ids <- gsub("([0-9]+) .*", "\\1", feedback_files)
+  ids
+}
+student_id <- function(student_id) {
+  if (is.numeric(student_id)) {
+    sprintf("%08i", student_id)
+  } else {
+    student_id
+  }
+}
+
 if (0) {
-  read_marks(here::here("feedback/227212_2021/marks.csv")) %>%
+  all_marks <- read_marks(here::here("feedback/233214_2023_week12/marks.csv")) %>%
     group_by(StudentID, StudentName) %>%
     mutate(Mark = as.numeric(Mark)) %>%
     summarise(Mark = sum(Mark)) %>%
-    filter(!is.na(Mark)) %>%
+    filter(!is.na(Mark)) %>% as.data.frame()
+
 #    mutate(Mark = Mark + Stars) %>%
 #    ggplot(aes(x=Mark)) + geom_histogram()
-    write_csv("feedback/227212_2021/227212_2021.csv")
+    write_csv("feedback/233214_2023_week12/233214_2022_week12.csv")
+}
+
+# Merge spreadsheet for 'upload marks' functionality
+if (0) {
+  stream <- read_csv("processing_assignments/2024_233214_week12/Grades-233214_2024_S2FS-12. Price of AirBNBs in Sydney--4954146.csv")
+  marker <- read_csv(here::here("feedback/2024_233214_week12/marks.csv")) %>%
+    group_by(StudentID, StudentName) %>%
+    mutate(Mark = as.numeric(Mark)) %>%
+    summarise(Mark = sum(Mark)) %>%
+    filter(!is.na(Mark)) %>% as.data.frame() %>%
+    mutate(StudentID = student_id(StudentID)) %>%
+#    filter(StudentID %in% get_feedback_ids(here::here("feedback/2024_161324_A1/2024_161324_A1"))) |>
+    ungroup() |>
+    mutate(StudentID = as.character(StudentID))
+  stream %>% mutate(StudentID = as.character(`ID number`)) %>%
+    left_join(marker, by=c("StudentID")) %>%
+    mutate(Grade = if_else(is.na(Grade), Mark, as.numeric(Grade))) %>%
+    filter(!is.na(Grade)) %>%
+    select(one_of(names(stream))) %>%
+    mutate(`Maximum Grade` = 15) %>%
+    write_csv("feedback/2024_233214_week12/upload_grades.csv", na="")
 }
