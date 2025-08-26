@@ -2,7 +2,7 @@ library(tidyverse)
 library(rmarkdown)
 
 # list files
-paper_path = "processing_assignments/2025/161324_A2"
+paper_path = "processing_assignments/2025/297101_ass1"
 
 # find the zip file
 zip_file = list.files(paper_path, "*.zip", full.names = TRUE)
@@ -37,14 +37,16 @@ if (0) {
   fs::dir_delete(file.path(base_path, del_these))
 }
 
-students = list.files(path=in_path, pattern=".Rmd$", ignore.case=TRUE, recursive = TRUE)
+students = list.files(path=in_path, pattern=".qmd$", ignore.case=TRUE, recursive = TRUE)
 
 # ignore those that have html files
-get_html_files <- function(in_path, ext=".htm|.pdf") {
+get_html_files <- function(in_path, ext=".htm|.pdf", ignoreAI = TRUE) {
   html = list.files(path=in_path, pattern=ext, ignore.case = TRUE, recursive = TRUE)
   # ignore the Generative AI use statemetn bullshit
-  html <- html[!str_detect(html, "Generative AI")]
-  html <- html[!str_detect(html, "Generative-AI")]
+  if (ignoreAI) {
+    html <- html[!str_detect(html, "Generative AI")]
+    html <- html[!str_detect(html, "Generative-AI")]
+  }
   # check for multiple files per student
   multiples <- ignore <- data.frame(dir = dirname(html), file = html) |>
     add_count(dir) |>
@@ -59,10 +61,9 @@ get_html_files <- function(in_path, ext=".htm|.pdf") {
 
   html
 }
-html = get_html_files(in_path)
+html = get_html_files(in_path, ext=".htm")
 
 students <- students[!dirname(students) %in% dirname(html)]
-
 
 # now load up rmarkdown and knit
 

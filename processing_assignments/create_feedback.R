@@ -150,7 +150,7 @@ if (0) {
       write_csv('feedback/2024_233214_week11/questions.csv')
   }
   year <- 2025
-  paper <- "161324_A1"
+  paper <- "PSB_161777_A2"
   base_path <- file.path("processing_assignments", year, paper)
   year_paper <- paste(year, paper, sep="_")
   feedback(rmd_dir = base_path, out_dir=file.path(base_path, "feedback"),

@@ -4,7 +4,7 @@ library(stringr)
 library(tibble)
 source('markeR/questions_csv.R')
 
-paper_name = "161324_A2"
+paper_name = "297101_ass1"
 year = 2025
 base_path = file.path("processing_assignments", year, paper_name)
 assignment = read_lines(file.path(base_path, 'solutions.Rmd'))

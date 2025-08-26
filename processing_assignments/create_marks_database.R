@@ -6,7 +6,7 @@ library(readxl)
 library(fs)
 library(httr)
 
-paper_name = "161324_A2"
+paper_name = "297101_ass1"
 year = 2025
 base_path = file.path("processing_assignments", year, paper_name)
 paper_folder = paste(year, paper_name, sep="_")
